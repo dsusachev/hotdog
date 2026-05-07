@@ -1,4 +1,1 @@
-Code style:
-Class names, types - UpperCamelCase
-Variables, functions - lowerCamelCase
-file names - snake_case
+AI based program to recognize bakery products.
