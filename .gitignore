@@ -1,0 +1,12 @@
+.*
+
+# Output directories
+output
+
+# Generated files
+*.log
+*.txt
+*.out
+
+# Exceptions
+!.gitignore
