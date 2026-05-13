@@ -7,4 +7,4 @@ AI based program to recognize bakery products.
 * Task is marked as completed in the tracking system (e.g., Jira, Trello).
 
 ## Architecture
-![Схема системы](doc/hotdog_system_architecture.svg)
+![Схема системы](doc/backend/hotdog_system_architecture.svg)
