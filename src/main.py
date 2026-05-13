@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.config import settings
 from src.api.router import router
+from src.api.healthRouter import router as healthRouter
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -19,8 +20,4 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api")
-
-
-@app.get("/health")
-def health_check():
-    return {"status": "ok", "version": settings.VERSION}
+app.include_router(healthRouter)
