@@ -6,5 +6,5 @@ AI based program to recognize bakery products.
 * Code follows agreed style guidelines and has been reviewed (if required).
 * Task is marked as completed in the tracking system (e.g., Jira, Trello).
 
-## Архитектура
-![Схема системы](doc/architecture.svg)
+## Architecture
+![Схема системы](doc/hotdog_system_architecture.svg)
