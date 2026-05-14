@@ -1,22 +1,11 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File
 from src.core.config import settings
 from src.core.logger import logger
+from src.core.validation import validateImageFile
 from src.services.mlServiceClient import mlServiceClient
 from src.api.schemas import ClassifyResponse, TopPrediction, ErrorResponse
 
 router = APIRouter()
-
-
-def validateImage(file: UploadFile) -> None:
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-
-    extension = file.filename.split(".")[-1].lower()
-    if extension not in settings.ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported file type. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}",
-        )
 
 
 @router.post(
@@ -25,19 +14,9 @@ def validateImage(file: UploadFile) -> None:
     responses={400: {"model": ErrorResponse}},
 )
 async def classifyImage(file: UploadFile = File(...)):
-    validateImage(file)
-
     imageBytes = await file.read()
 
-    if len(imageBytes) == 0:
-        raise HTTPException(status_code=400, detail="File is empty")
-
-    maxBytes = settings.MAX_FILE_SIZE_MB * 1024 * 1024
-    if len(imageBytes) > maxBytes:
-        raise HTTPException(
-            status_code=400,
-            detail=f"File too large. Max size: {settings.MAX_FILE_SIZE_MB} MB",
-        )
+    validateImageFile(file, imageBytes)
 
     logger.info(f"Classifying image: {file.filename} ({len(imageBytes)} bytes)")
 
