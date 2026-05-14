@@ -24,6 +24,11 @@ class MlServiceClient:
         return {
             "category": "hotdog",
             "confidence": 0.91,
+            "top_k": [
+                {"category": "hotdog", "confidence": 0.91},
+                {"category": "sausage", "confidence": 0.06},
+                {"category": "sandwich", "confidence": 0.02},
+            ],
             "mock": True,
         }
 
