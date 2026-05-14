@@ -11,3 +11,7 @@ output
 # Exceptions
 !.gitignore
 ".env" 
+venv/
+__pycache__/
+*.pyc
+.env
