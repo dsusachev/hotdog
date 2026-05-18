@@ -13,6 +13,9 @@ class NutritionFacts(BaseModel):
     proteins_per_100g: float | None = None
     fats_per_100g: float | None = None
     carbs_per_100g: float | None = None
+    sugar_per_100g: float | None = None
+    fiber_per_100g: float | None = None
+    salt_per_100g: float | None = None
 
 
 class ProductSearchItem(BaseModel):
@@ -38,7 +41,7 @@ class ProductDetailResponse(BaseModel):
     image_url: str | None = None
     nutrition: NutritionFacts
     ingredients: str | None = None
-    description: str | None = None  # Краткое описание: бренд + категория
+    description: str | None = None
 
 
 def buildDescription(raw: dict) -> str | None:
@@ -57,6 +60,9 @@ def parseNutrition(nutriments: dict) -> NutritionFacts:
         proteins_per_100g=nutriments.get("proteins_100g"),
         fats_per_100g=nutriments.get("fat_100g"),
         carbs_per_100g=nutriments.get("carbohydrates_100g"),
+        sugar_per_100g=nutriments.get("sugars_100g"),
+        fiber_per_100g=nutriments.get("fiber_100g"),
+        salt_per_100g=nutriments.get("salt_100g"),
     )
 
 
