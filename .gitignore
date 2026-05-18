@@ -10,4 +10,12 @@ output
 
 # Exceptions
 !.gitignore
-".env" 
+".env"
+
+# ML-specific
+ml/.venv/
+ml/dataset/
+ml/runs/
+Machine Learning/
+__pycache__/
+!ml/requirements.txt
