@@ -38,6 +38,17 @@ class ProductDetailResponse(BaseModel):
     image_url: str | None = None
     nutrition: NutritionFacts
     ingredients: str | None = None
+    description: str | None = None  # Краткое описание: бренд + категория
+
+
+def buildDescription(raw: dict) -> str | None:
+    parts = []
+    if raw.get("brands"):
+        parts.append(raw["brands"])
+    if raw.get("categories"):
+        first_category = raw["categories"].split(",")[0].strip()
+        parts.append(first_category)
+    return ", ".join(parts) if parts else None
 
 
 def parseNutrition(nutriments: dict) -> NutritionFacts:
@@ -107,4 +118,5 @@ async def getProduct(productId: str):
         image_url=raw.get("image_url") or None,
         nutrition=parseNutrition(raw.get("nutriments", {})),
         ingredients=raw.get("ingredients_text") or None,
+        description=buildDescription(raw),
     )
