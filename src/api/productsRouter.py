@@ -30,6 +30,16 @@ class ProductSearchResponse(BaseModel):
     products: List[ProductSearchItem]
 
 
+class ProductDetailResponse(BaseModel):
+    id: str
+    name: str
+    brand: str | None = None
+    categories: str | None = None
+    image_url: str | None = None
+    nutrition: NutritionFacts
+    ingredients: str | None = None
+
+
 def parseNutrition(nutriments: dict) -> NutritionFacts:
     return NutritionFacts(
         calories_per_100g=nutriments.get("energy-kcal_100g"),
@@ -43,13 +53,12 @@ def parseProduct(raw: dict) -> ProductSearchItem | None:
     name = raw.get("product_name", "").strip()
     if not name:
         return None
-
     return ProductSearchItem(
         id=raw.get("code", ""),
         name=name,
-        brand=raw.get("brands", None),
-        categories=raw.get("categories", None),
-        image_url=raw.get("image_url", None),
+        brand=raw.get("brands") or None,
+        categories=raw.get("categories") or None,
+        image_url=raw.get("image_url") or None,
         nutrition=parseNutrition(raw.get("nutriments", {})),
     )
 
@@ -62,7 +71,6 @@ async def searchProducts(
         raise HTTPException(status_code=400, detail="Query cannot be empty")
 
     logger.info(f"Searching products: '{query}'")
-
     rawProducts = await openFoodFactsClient.searchProducts(query)
 
     products = [
@@ -72,9 +80,31 @@ async def searchProducts(
     ]
 
     logger.info(f"Found {len(products)} products for query '{query}'")
-
     return ProductSearchResponse(
         query=query,
         total=len(products),
         products=products,
+    )
+
+
+@router.get("/products/{productId}", response_model=ProductDetailResponse)
+async def getProduct(productId: str):
+    logger.info(f"Getting product by id: '{productId}'")
+    raw = await openFoodFactsClient.getProductById(productId)
+
+    if not raw:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    name = raw.get("product_name", "").strip()
+    if not name:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    return ProductDetailResponse(
+        id=raw.get("code", productId),
+        name=name,
+        brand=raw.get("brands") or None,
+        categories=raw.get("categories") or None,
+        image_url=raw.get("image_url") or None,
+        nutrition=parseNutrition(raw.get("nutriments", {})),
+        ingredients=raw.get("ingredients_text") or None,
     )
