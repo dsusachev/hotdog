@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.core.config import settings
 from src.core.errorHandlers import (
@@ -9,6 +10,7 @@ from src.core.errorHandlers import (
     validationExceptionHandler,
     unexpectedExceptionHandler,
 )
+from src.core.loggingMiddleware import loggingMiddleware
 from src.api.router import router
 from src.api.healthRouter import router as healthRouter
 from src.api.classifyRouter import router as classifyRouter
@@ -26,6 +28,8 @@ app.add_exception_handler(HTTPException, httpExceptionHandler)
 app.add_exception_handler(RequestValidationError, validationExceptionHandler)
 app.add_exception_handler(Exception, unexpectedExceptionHandler)
 
+# Middleware
+app.add_middleware(BaseHTTPMiddleware, dispatch=loggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
