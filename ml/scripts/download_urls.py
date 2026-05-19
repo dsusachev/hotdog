@@ -82,6 +82,7 @@ def main() -> None:
     valid_class_names = set(load_class_names(args.dataset_root))
     args.out_root.mkdir(parents=True, exist_ok=True)
 
+
     # utf-8-sig strips a BOM if the CSV was saved by Excel / a Windows editor.
     rows = list(csv.DictReader(args.csv.open(encoding="utf-8-sig")))
     if not rows or set(rows[0].keys()) != {"class_name", "url"}:
@@ -89,6 +90,7 @@ def main() -> None:
             f"CSV must have exactly two columns: class_name,url. "
             f"Got: {set(rows[0].keys()) if rows else 'empty file'}"
         )
+
 
     n_ok = 0
     n_skip = 0
