@@ -293,11 +293,13 @@ def train_two_stage(
             epoch_t0 = time.time()
 
             model.train()
+
             # Always force BN in *currently-frozen* blocks to eval — otherwise
             # their running stats drift away from ImageNet even though their
             # gamma/beta are frozen. Particularly important for EfficientNet,
             # where BN layers are everywhere.
             set_bn_eval_for_frozen_backbone(model, backbone_name)
+
 
             train_m = train_one_epoch(
                 model, train_loader, criterion, optimizer, scaler,
