@@ -13,6 +13,8 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
+from torchvision import transforms
+
 from src.evaluate import load_class_names
 from src.model import Backbone, build_model
 from src.transforms import EVAL_RESIZE, IMAGENET_MEAN, IMAGENET_STD, INPUT_SIZE
@@ -94,3 +96,19 @@ def class_names_from_artifact(artifact: dict) -> list[str]:
     mapping = artifact["class_id_to_name"]
     n = artifact["num_classes"]
     return [mapping[str(i)] for i in range(n)]
+
+
+def build_eval_transform_from_artifact(artifact: dict) -> transforms.Compose:
+    """Build eval transform using preprocessing config stored in the artifact.
+
+    Inference must use the *exact* preprocessing the model was evaluated with,
+    so we read params from the artifact instead of from src.transforms — this
+    way changing src.transforms in the future does not silently break inference.
+    """
+    pp = artifact["preprocessing"]
+    return transforms.Compose([
+        transforms.Resize(pp["resize"]),
+        transforms.CenterCrop(pp["crop"]),
+        transforms.ToTensor(),
+        transforms.Normalize(pp["mean"], pp["std"]),
+    ])
