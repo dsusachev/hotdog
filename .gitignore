@@ -16,6 +16,7 @@ output
 ml/.venv/
 ml/dataset/
 ml/runs/
+ml/artifacts/
 Machine Learning/
 __pycache__/
 !ml/requirements.txt
