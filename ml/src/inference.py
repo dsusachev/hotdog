@@ -60,31 +60,53 @@ class Predictor:
 
     # --------------------------------------------------------------- prediction
 
+    def _label_dict(self, class_id: int, confidence: float) -> dict:
+        return {
+            "category": self.class_names[class_id],
+            "category_id": class_id,
+            "confidence": confidence,
+        }
+
     @torch.no_grad()
-    def predict(self, image: ImageInput) -> dict:
-        """Single-image top-1 prediction.
+    def predict(self, image: ImageInput, top_k: int = 3) -> dict:
+        """Single-image prediction with top-k (ml_aproach.md §10).
 
         Returns:
             {
-                "category": str,           # human-readable label
-                "category_id": int,
-                "confidence": float,       # softmax prob in [0, 1]
+                "prediction": {category, category_id, confidence},   # top-1
+                "top_k": [ {category, category_id, confidence}, ... ], # length=top_k, desc-sorted
                 "model_version": str,
-                "inference_time_ms": int,  # preprocessing + forward + softmax
+                "inference_time_ms": int,
             }
+        Note: top_k[0] intentionally duplicates `prediction` — keeps the
+        frontend loop uniform regardless of is_unknown (task #43).
         """
+        if not 1 <= top_k <= len(self.class_names):
+            raise ValueError(
+                f"top_k must be in [1, {len(self.class_names)}], got {top_k}"
+            )
+
         t0 = time.perf_counter()
         img = self._load_image(image)
         x = self.transform(img).unsqueeze(0).to(self.device)
         logits = self.model(x)
         probs = F.softmax(logits, dim=1)[0]
-        idx = int(probs.argmax().item())
+
+        top_probs, top_indices = probs.topk(top_k)
+        top_probs = top_probs.tolist()
+        top_indices = [int(i) for i in top_indices.tolist()]
+
+        top_k_list = [
+            self._label_dict(idx, float(p))
+            for idx, p in zip(top_indices, top_probs)
+        ]
+        prediction = dict(top_k_list[0])  # copy so callers can mutate safely
+
         elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
         return {
-            "category": self.class_names[idx],
-            "category_id": idx,
-            "confidence": float(probs[idx].item()),
+            "prediction": prediction,
+            "top_k": top_k_list,
             "model_version": self.model_version,
             "inference_time_ms": elapsed_ms,
         }

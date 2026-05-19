@@ -50,19 +50,40 @@ def check(artifact_path: Path) -> None:
 
     for i in range(n):
         pil_img, true_label = raw_ds[i]
-        out = p.predict(pil_img)
+        out = p.predict(pil_img, top_k=3)
 
         assert set(out.keys()) == {
-            "category", "category_id", "confidence",
-            "model_version", "inference_time_ms",
+            "prediction", "top_k", "model_version", "inference_time_ms",
         }, out.keys()
-        assert out["category_id"] == int(batch_preds[i]), (
-            f"sample {i}: predictor said {out['category_id']}, "
+        pred = out["prediction"]
+        assert set(pred.keys()) == {"category", "category_id", "confidence"}
+        assert pred["category_id"] == int(batch_preds[i]), (
+            f"sample {i}: predictor said {pred['category_id']}, "
             f"batch said {batch_preds[i]}"
         )
-        assert abs(out["confidence"] - float(batch_probs[i, out["category_id"]])) < 1e-5
+        assert abs(
+            pred["confidence"] - float(batch_probs[i, pred["category_id"]])
+        ) < 1e-5
 
-    print(f"[OK] predict() matches predict_all on {n} val images")
+        topk = out["top_k"]
+        assert len(topk) == 3
+        # top_k[0] duplicates prediction (intentional, ml_aproach.md §10)
+        assert topk[0] == pred
+        # descending sort by confidence
+        confs = [t["confidence"] for t in topk]
+        assert confs == sorted(confs, reverse=True), confs
+        # top-3 from softmax cannot exceed 1
+        assert sum(confs) <= 1.0 + 1e-5
+        # ids are distinct
+        assert len({t["category_id"] for t in topk}) == 3
+
+    print(f"[OK] predict(top_k=3) matches predict_all + top_k invariants hold")
+
+    # k=1 special case
+    out_k1 = p.predict(raw_ds[0][0], top_k=1)
+    assert len(out_k1["top_k"]) == 1
+    assert out_k1["top_k"][0] == out_k1["prediction"]
+    print(f"[OK] top_k=1 is a degenerate case of top-k")
 
     # bytes input — encode first val image as JPEG bytes
     pil_img, _ = raw_ds[0]
@@ -70,7 +91,7 @@ def check(artifact_path: Path) -> None:
     pil_img.save(buf, format="JPEG", quality=95)
     out_pil = p.predict(pil_img)
     out_bytes = p.predict(buf.getvalue())
-    assert out_pil["category_id"] == out_bytes["category_id"], (
+    assert out_pil["prediction"]["category_id"] == out_bytes["prediction"]["category_id"], (
         "PIL and bytes inputs disagree on top-1"
     )
     print(f"[OK] PIL / bytes inputs interchangeable")
