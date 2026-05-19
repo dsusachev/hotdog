@@ -48,16 +48,16 @@ def check(artifact_path: Path) -> None:
     batch_preds = batch_logits.argmax(axis=1)
     batch_probs = torch.softmax(torch.from_numpy(batch_logits), dim=1).numpy()
 
+    # Force threshold=0.0 for batch-vs-predictor comparison so prediction is
+    # never nulled to is_unknown — we want to compare top-1 ids directly.
     for i in range(n):
         pil_img, true_label = raw_ds[i]
-        out = p.predict(pil_img, top_k=3)
+        out = p.predict(pil_img, top_k=3, threshold=0.0)
 
         assert set(out.keys()) == {
             "is_unknown", "prediction", "top_k",
             "threshold", "model_version", "inference_time_ms",
         }, out.keys()
-        # Default threshold = artifact threshold (None now) -> 0.0 fallback,
-        # so is_unknown must always be False.
         assert out["threshold"] == 0.0
         assert out["is_unknown"] is False
         pred = out["prediction"]
