@@ -16,6 +16,14 @@ output
 ml/.venv/
 ml/dataset/
 ml/runs/
+
+ml/artifacts/
+ml/own_test_set/*/*.jpg
+ml/own_test_set/*/*.jpeg
+ml/own_test_set/*/*.png
+ml/own_test_set/*/*.webp
+ml/own_test_set/*/*.heic
+
 Machine Learning/
 __pycache__/
 !ml/requirements.txt
