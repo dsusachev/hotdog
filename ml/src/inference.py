@@ -67,24 +67,46 @@ class Predictor:
             "confidence": confidence,
         }
 
+    def _resolve_threshold(self, threshold: float | None) -> float:
+        """Resolve effective threshold: explicit arg > artifact > 0.0 fallback.
+
+        Fallback 0.0 means "never unknown" — used before threshold is tuned
+        in task #44, so the artifact still works end-to-end.
+        """
+        if threshold is not None:
+            return float(threshold)
+        if self.threshold is not None:
+            return float(self.threshold)
+        return 0.0
+
     @torch.no_grad()
-    def predict(self, image: ImageInput, top_k: int = 3) -> dict:
-        """Single-image prediction with top-k (ml_aproach.md §10).
+    def predict(
+        self,
+        image: ImageInput,
+        top_k: int = 3,
+        threshold: float | None = None,
+    ) -> dict:
+        """Single-image prediction with top-k and unknown-detection (ml_aproach.md §8, §10).
 
         Returns:
             {
-                "prediction": {category, category_id, confidence},   # top-1
-                "top_k": [ {category, category_id, confidence}, ... ], # length=top_k, desc-sorted
+                "is_unknown": bool,                           # top-1 prob < threshold
+                "prediction": {category, ...} | None,         # None when is_unknown
+                "top_k": [ {category, ...}, ... ],            # always present
+                "threshold": float,                           # value actually applied
                 "model_version": str,
                 "inference_time_ms": int,
             }
-        Note: top_k[0] intentionally duplicates `prediction` — keeps the
-        frontend loop uniform regardless of is_unknown (task #43).
+        Top_k is returned even on is_unknown — frontend can show "model is
+        unsure, but maybe X, Y, or Z" instead of just "not recognised".
         """
         if not 1 <= top_k <= len(self.class_names):
             raise ValueError(
                 f"top_k must be in [1, {len(self.class_names)}], got {top_k}"
             )
+        eff_threshold = self._resolve_threshold(threshold)
+        if not 0.0 <= eff_threshold <= 1.0:
+            raise ValueError(f"threshold must be in [0, 1], got {eff_threshold}")
 
         t0 = time.perf_counter()
         img = self._load_image(image)
@@ -100,13 +122,16 @@ class Predictor:
             self._label_dict(idx, float(p))
             for idx, p in zip(top_indices, top_probs)
         ]
-        prediction = dict(top_k_list[0])  # copy so callers can mutate safely
+        max_prob = top_probs[0]
+        is_unknown = max_prob < eff_threshold
 
         elapsed_ms = int((time.perf_counter() - t0) * 1000)
 
         return {
-            "prediction": prediction,
+            "is_unknown": is_unknown,
+            "prediction": None if is_unknown else dict(top_k_list[0]),
             "top_k": top_k_list,
+            "threshold": eff_threshold,
             "model_version": self.model_version,
             "inference_time_ms": elapsed_ms,
         }

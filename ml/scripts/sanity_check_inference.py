@@ -53,14 +53,16 @@ def check(artifact_path: Path) -> None:
         out = p.predict(pil_img, top_k=3)
 
         assert set(out.keys()) == {
-            "prediction", "top_k", "model_version", "inference_time_ms",
+            "is_unknown", "prediction", "top_k",
+            "threshold", "model_version", "inference_time_ms",
         }, out.keys()
+        # Default threshold = artifact threshold (None now) -> 0.0 fallback,
+        # so is_unknown must always be False.
+        assert out["threshold"] == 0.0
+        assert out["is_unknown"] is False
         pred = out["prediction"]
         assert set(pred.keys()) == {"category", "category_id", "confidence"}
-        assert pred["category_id"] == int(batch_preds[i]), (
-            f"sample {i}: predictor said {pred['category_id']}, "
-            f"batch said {batch_preds[i]}"
-        )
+        assert pred["category_id"] == int(batch_preds[i])
         assert abs(
             pred["confidence"] - float(batch_probs[i, pred["category_id"]])
         ) < 1e-5
@@ -69,17 +71,29 @@ def check(artifact_path: Path) -> None:
         assert len(topk) == 3
         # top_k[0] duplicates prediction (intentional, ml_aproach.md §10)
         assert topk[0] == pred
-        # descending sort by confidence
         confs = [t["confidence"] for t in topk]
         assert confs == sorted(confs, reverse=True), confs
-        # top-3 from softmax cannot exceed 1
         assert sum(confs) <= 1.0 + 1e-5
-        # ids are distinct
         assert len({t["category_id"] for t in topk}) == 3
 
-    print(f"[OK] predict(top_k=3) matches predict_all + top_k invariants hold")
+    print(f"[OK] predict(top_k=3) matches predict_all + invariants hold")
 
-    # k=1 special case
+    # ---- threshold branches ----
+    pil_img, _ = raw_ds[0]
+    out_low = p.predict(pil_img, top_k=3, threshold=0.0)
+    assert out_low["is_unknown"] is False
+    assert out_low["prediction"] is not None
+    print(f"[OK] threshold=0.0 -> never unknown")
+
+    out_high = p.predict(pil_img, top_k=3, threshold=0.9999)
+    # softmax top-1 < 0.9999 is essentially guaranteed for a 43-class model.
+    assert out_high["is_unknown"] is True, out_high
+    assert out_high["prediction"] is None
+    assert len(out_high["top_k"]) == 3  # top_k still returned on unknown
+    assert out_high["threshold"] == 0.9999
+    print(f"[OK] threshold=0.9999 -> is_unknown=True, prediction=None, top_k present")
+
+    # k=1 degenerate case
     out_k1 = p.predict(raw_ds[0][0], top_k=1)
     assert len(out_k1["top_k"]) == 1
     assert out_k1["top_k"][0] == out_k1["prediction"]
@@ -91,9 +105,10 @@ def check(artifact_path: Path) -> None:
     pil_img.save(buf, format="JPEG", quality=95)
     out_pil = p.predict(pil_img)
     out_bytes = p.predict(buf.getvalue())
-    assert out_pil["prediction"]["category_id"] == out_bytes["prediction"]["category_id"], (
-        "PIL and bytes inputs disagree on top-1"
-    )
+    assert (
+        out_pil["prediction"]["category_id"]
+        == out_bytes["prediction"]["category_id"]
+    ), "PIL and bytes inputs disagree on top-1"
     print(f"[OK] PIL / bytes inputs interchangeable")
 
     print(f"  sample output: {out_pil}")
