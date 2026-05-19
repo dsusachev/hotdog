@@ -1,0 +1,38 @@
+# BUG REPORT (version-controlled)
+# All fields required unless marked [optional]
+
+BUG_ID: BUG-001
+TITLE: Short problem description
+
+SEVERITY: Blocker | Critical | High | Medium | Low
+
+MODULE: recognition | product_card | prices | geolocation | history | auth | feedback | error_handling | ui
+
+ENVIRONMENT:
+  OS: Windows 11 / macOS 14 / Ubuntu 22
+  BROWSER: Chrome 120 / Firefox 121 / Safari 17
+  GEOLOCATION: enabled | disabled | denied
+
+PRECONDITIONS:
+  - e.g., "User is not authenticated"
+  - "Geolocation is allowed"
+
+STEPS_TO_REPRODUCE:
+  1. Step 1
+  2. Step 2
+  3. Step 3
+
+ACTUAL_RESULT:
+  What actually happens
+
+EXPECTED_RESULT:
+  Expected behavior per spec
+
+ATTACHMENTS: [optional] links to screenshots/videos (can be stored in .bugs/assets/)
+
+ADDITIONAL_INFO: [optional] logs, API status, console errors
+
+# Fields filled later (by engineer or automation)
+STATUS: new | in_progress | fixed | rejected | duplicate
+FIX_BRANCH: [optional]
+DATE_CLOSED: [optional]
