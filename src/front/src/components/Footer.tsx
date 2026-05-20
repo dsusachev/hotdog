@@ -1,4 +1,5 @@
 import hotdogImg from '../assets/hotdog.jpeg'
+
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto">
