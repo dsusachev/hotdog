@@ -16,6 +16,13 @@ class ClassifyResponse(BaseModel):
     mock: bool = False                 # True если ML Service недоступен
 
 
+class ErrorDetail(BaseModel):
+    field: str
+    message: str
+
+
 class ErrorResponse(BaseModel):
     status: str = "error"
+    code: int
     message: str
+    details: List[ErrorDetail] | None = None
