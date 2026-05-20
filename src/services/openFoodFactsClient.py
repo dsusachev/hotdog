@@ -2,7 +2,7 @@ import httpx
 from src.core.config import settings
 from src.core.logger import logger
 
-MAX_RETRIES = 3
+MAX_RETRIES = 2
 
 
 class OpenFoodFactsClient:
@@ -33,7 +33,7 @@ class OpenFoodFactsClient:
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 async with httpx.AsyncClient(
-                    timeout=10.0,
+                    timeout=5.0,
                     headers=self.headers,
                 ) as client:
                     response = await client.get(
