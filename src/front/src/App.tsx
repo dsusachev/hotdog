@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import BottomNav from './components/BottomNav'
+import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import UploadPage from './pages/UploadPage'
 import SearchPage from './pages/SearchPage'
@@ -27,6 +28,7 @@ function App() {
             <Route path="/register"  element={<RegisterPage />} />
           </Routes>
         </main>
+        <Footer />
         <BottomNav />
       </div>
     </Router>
