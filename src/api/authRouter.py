@@ -6,11 +6,13 @@ import uuid
 from src.db.database import getDb
 from src.db.models.user import User
 from src.core.security import hashPassword, verifyPassword, createAccessToken
+from src.core.dependencies import getCurrentUser
 from src.api.schemas import (
     UserRegisterRequest,
     UserRegisterResponse,
     UserLoginRequest,
     TokenResponse,
+    UserMeResponse,
 )
 from src.core.logger import logger
 
@@ -61,3 +63,13 @@ async def login(data: UserLoginRequest, db: AsyncSession = Depends(getDb)):
 
     logger.info(f"User logged in: {user.email}")
     return TokenResponse(access_token=token)
+
+
+@router.get("/auth/me", response_model=UserMeResponse)
+async def getMe(currentUser: User = Depends(getCurrentUser)):
+    return UserMeResponse(
+        id=str(currentUser.id),
+        email=currentUser.email,
+        display_name=currentUser.display_name,
+        is_active=currentUser.is_active,
+    )
