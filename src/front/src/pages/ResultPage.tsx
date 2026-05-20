@@ -1,7 +1,112 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+
+const YANDEX_API_KEY = 'ВАШ_КЛЮЧ_ЗДЕСЬ'
+
+type Place = {
+  name: string
+  address: string
+  distance: string
+  category: string
+}
+
+type GeoStatus = 'idle' | 'loading' | 'success' | 'error'
+type PlacesStatus = 'idle' | 'loading' | 'success' | 'error'
 
 export default function ResultPage() {
   const navigate = useNavigate()
+  const { state } = useLocation()
+  const result = state?.result ?? null
+
+  const [geoStatus, setGeoStatus]       = useState<GeoStatus>('idle')
+  const [placesStatus, setPlacesStatus] = useState<PlacesStatus>('idle')
+  const [places, setPlaces]             = useState<Place[]>([])
+  const [geoError, setGeoError]         = useState('')
+  const [placesError, setPlacesError]   = useState('')
+
+  // Request geolocation then fetch nearby places
+  const fetchNearby = () => {
+    if (!navigator.geolocation) {
+      setGeoError('Геолокация не поддерживается вашим браузером')
+      setGeoStatus('error')
+      return
+    }
+
+    setGeoStatus('loading')
+    setPlaces([])
+    setGeoError('')
+    setPlacesError('')
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        setGeoStatus('success')
+        const { latitude, longitude } = pos.coords
+        await loadPlaces(latitude, longitude)
+      },
+      (err) => {
+        setGeoStatus('error')
+        if (err.code === err.PERMISSION_DENIED) {
+          setGeoError('Вы запретили доступ к геолокации')
+        } else {
+          setGeoError('Не удалось определить местоположение')
+        }
+      },
+      { timeout: 8000 }
+    )
+  }
+
+  const loadPlaces = async (lat: number, lon: number) => {
+    setPlacesStatus('loading')
+    try {
+      // Yandex Places API (геопоиск)
+      const url = new URL('https://search-maps.yandex.ru/v1/')
+      url.searchParams.set('apikey', YANDEX_API_KEY)
+      url.searchParams.set('text', 'магазины продукты кафе рестораны')
+      url.searchParams.set('ll', `${lon},${lat}`)
+      url.searchParams.set('spn', '0.05,0.05')
+      url.searchParams.set('lang', 'ru_RU')
+      url.searchParams.set('results', '8')
+      url.searchParams.set('type', 'biz')
+
+      const res = await fetch(url.toString())
+      if (!res.ok) throw new Error(`Ошибка Яндекс API: ${res.status}`)
+
+      const data = await res.json()
+      const features = data.features ?? []
+
+      const parsed: Place[] = features.map((f: any) => {
+        const props = f.properties
+        const coords: [number, number] = f.geometry.coordinates // [lon, lat]
+        const dist = haversine(lat, lon, coords[1], coords[0])
+
+        return {
+          name:     props.name ?? 'Без названия',
+          address:  props.description ?? '',
+          category: props.CompanyMetaData?.Categories?.[0]?.name ?? '',
+          distance: dist < 1000
+            ? `${Math.round(dist)} м`
+            : `${(dist / 1000).toFixed(1)} км`,
+        }
+      })
+
+      // Sort by distance (raw metres)
+      const withRaw = features.map((f: any) => {
+        const coords: [number, number] = f.geometry.coordinates
+        return haversine(lat, lon, coords[1], coords[0])
+      })
+      parsed.sort((a, b) => {
+        const da = withRaw[parsed.indexOf(a)] ?? 0
+        const db = withRaw[parsed.indexOf(b)] ?? 0
+        return da - db
+      })
+
+      setPlaces(parsed)
+      setPlacesStatus('success')
+    } catch (err) {
+      setPlacesStatus('error')
+      setPlacesError(err instanceof Error ? err.message : 'Не удалось загрузить места')
+    }
+  }
 
   return (
     <div className="max-w-md mx-auto py-10 px-4">
@@ -12,10 +117,135 @@ export default function ResultPage() {
         ← Назад
       </button>
 
-      <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-gray-400">
-        <div className="text-5xl mb-4">📊</div>
-        <p>Результат анализа появится здесь</p>
+      {/* Classification result */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
+        {result ? (
+          <>
+            <div className="text-4xl mb-3 text-center">🍽️</div>
+            <h2 className="text-xl font-bold text-center mb-4">
+              {result.label ?? 'Результат анализа'}
+            </h2>
+            {result.confidence !== undefined && (
+              <div className="flex justify-between text-sm text-gray-500 mb-2">
+                <span>Уверенность</span>
+                <span className="font-medium text-teal-600">
+                  {Math.round(result.confidence * 100)}%
+                </span>
+              </div>
+            )}
+            {result.calories !== undefined && (
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Калории (на 100г)</span>
+                <span className="font-medium">{result.calories} ккал</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center text-gray-400">
+            <div className="text-5xl mb-4">📊</div>
+            <p>Результат анализа появится здесь</p>
+          </div>
+        )}
+      </div>
+
+      {/* Nearby places */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-gray-800">Поблизости</h3>
+          <button
+            onClick={fetchNearby}
+            disabled={geoStatus === 'loading' || placesStatus === 'loading'}
+            className="text-sm text-teal-600 font-medium hover:underline disabled:opacity-50 disabled:no-underline"
+          >
+            {geoStatus === 'idle' ? 'Найти рядом' : 'Обновить'}
+          </button>
+        </div>
+
+        {/* States */}
+        {geoStatus === 'idle' && (
+          <div className="text-center text-gray-400 py-8">
+            <div className="text-3xl mb-2">📍</div>
+            <p className="text-sm">Нажмите «Найти рядом» чтобы увидеть магазины и кафе поблизости</p>
+          </div>
+        )}
+
+        {(geoStatus === 'loading' || placesStatus === 'loading') && (
+          <div className="text-center text-gray-400 py-8">
+            <div className="inline-block w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mb-3" />
+            <p className="text-sm">
+              {geoStatus === 'loading' ? 'Определяем местоположение…' : 'Ищем места рядом…'}
+            </p>
+          </div>
+        )}
+
+        {geoStatus === 'error' && (
+          <div className="text-center py-6">
+            <p className="text-red-500 text-sm mb-3">{geoError}</p>
+            <button
+              onClick={fetchNearby}
+              className="text-sm text-teal-600 hover:underline"
+            >
+              Попробовать снова
+            </button>
+          </div>
+        )}
+
+        {placesStatus === 'error' && (
+          <div className="text-center py-6">
+            <p className="text-red-500 text-sm mb-3">{placesError}</p>
+            <button
+              onClick={fetchNearby}
+              className="text-sm text-teal-600 hover:underline"
+            >
+              Попробовать снова
+            </button>
+          </div>
+        )}
+
+        {placesStatus === 'success' && places.length === 0 && (
+          <div className="text-center text-gray-400 py-8">
+            <p className="text-sm">Рядом ничего не найдено</p>
+          </div>
+        )}
+
+        {placesStatus === 'success' && places.length > 0 && (
+          <ul className="divide-y divide-gray-100">
+            {places.map((place, i) => (
+              <li key={i} className="py-3 flex items-start gap-3">
+                <span className="text-xl mt-0.5">
+                  {place.category.includes('кафе') || place.category.includes('ресторан')
+                    ? '☕'
+                    : '🛒'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-800 text-sm truncate">{place.name}</p>
+                  {place.category && (
+                    <p className="text-xs text-teal-600 mb-0.5">{place.category}</p>
+                  )}
+                  {place.address && (
+                    <p className="text-xs text-gray-400 truncate">{place.address}</p>
+                  )}
+                </div>
+                <span className="text-xs text-gray-400 whitespace-nowrap mt-1">
+                  {place.distance}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )
+}
+
+// Haversine formula — distance between two coords in metres
+function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000
+  const toRad = (x: number) => (x * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
