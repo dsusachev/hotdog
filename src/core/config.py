@@ -38,6 +38,9 @@ class Settings(BaseSettings):
 
     # External APIs
     OPEN_FOOD_FACTS_URL: str = "https://world.openfoodfacts.org/api/v2"
+    YANDEX_API_KEY: str = ""
+    YANDEX_GEOCODER_URL: str = "https://geocode-maps.yandex.ru/1.x"
+    YANDEX_PLACES_URL: str = "https://search-maps.yandex.ru/v1"
 
     # File upload
     MAX_FILE_SIZE_MB: int = 5
