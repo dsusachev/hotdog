@@ -1,3 +1,5 @@
+import hotdogImg from '../assets/hotdog.jpeg'
+
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-gray-200 mt-auto">
@@ -24,7 +26,7 @@ export default function Footer() {
         </div>
 
         <img
-          src="/hotdog.jpeg"
+          src={hotdogImg}
           alt="Hotdog mascot"
           className="w-24 h-24 object-contain flex-shrink-0"
         />
