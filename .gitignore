@@ -3,7 +3,6 @@ output
 
 # Generated files
 *.log
-*.txt
 *.out
 
 # Exceptions

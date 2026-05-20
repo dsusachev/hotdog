@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+asyncpg  # или другая БД
+pydantic
+pydantic-settings
+python-dotenv
+httpx
+pytest
+pytest-asyncio
+pytest-cov
