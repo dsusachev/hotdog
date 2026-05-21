@@ -5,14 +5,21 @@ output
 *.log
 *.out
 
+# macOS
+.DS_Store
+
 # Exceptions
 !.gitignore
 
 # Environment files
 .env
 venv/
+.venv/
 __pycache__/
 *.pyc
+
+# Node
+node_modules/
 
 # ML-specific
 ml/.venv/
