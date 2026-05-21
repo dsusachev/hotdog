@@ -81,7 +81,7 @@ jobs:
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
           git fetch origin badges || true
           git checkout -B badges origin/badges 2>/dev/null || git checkout -b badges
-          cp coverage.svg tests.svg .
+          # Файлы уже здесь, копировать не нужно
           git add coverage.svg tests.svg
           git commit -m "Update coverage and test badges [skip ci]" || echo "No changes to commit"
           git push --force-with-lease origin badges
