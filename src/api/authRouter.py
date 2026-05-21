@@ -1,0 +1,62 @@
+import logging
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from src.db.database import getDb
+from src.db.models.user import User
+from src.schemas.user import UserCreateRequest, UserResponse, UserLoginRequest, TokenResponse
+from src.core.security import hashPasswordAsync, verifyPasswordAsync, createAccessToken
+
+logger = logging.getLogger("hotdog")
+router = APIRouter()
+
+
+@router.post("/auth/register", response_model=UserResponse)
+async def register(data: UserCreateRequest, db: AsyncSession = Depends(getDb)):
+    logger.info(f"Registration attempt: {data.email}")
+    
+    # Check if user exists
+    result = await db.execute(select(User).where(User.email == data.email))
+    existing = result.scalar_one_or_none()
+    
+    if existing:
+        logger.warning(f"Registration failed - email already exists: {data.email}")
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create new user
+    hashed = await hashPasswordAsync(data.password)
+    user = User(
+        email=data.email,
+        password_hash=hashed,
+        display_name=data.display_name,
+        is_active=True
+    )
+    
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    
+    logger.info(f"User registered successfully: {data.email}")
+    return user
+
+
+@router.post("/auth/login", response_model=TokenResponse)
+async def login(data: UserLoginRequest, db: AsyncSession = Depends(getDb)):
+    logger.info(f"Login attempt: {data.email}")
+    
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+    
+    if not user or not await verifyPasswordAsync(data.password, user.password_hash):
+        logger.warning(f"Login failed - invalid credentials: {data.email}")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    
+    if not user.is_active:
+        logger.warning(f"Login failed - account disabled: {data.email}")
+        raise HTTPException(status_code=403, detail="Account disabled")
+    
+    # Create token
+    token = createAccessToken(data={"sub": user.email})
+    
+    logger.info(f"User logged in successfully: {data.email}")
+    return TokenResponse(access_token=token, token_type="bearer")
