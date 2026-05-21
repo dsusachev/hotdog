@@ -48,3 +48,23 @@ jobs:
         with:
           name: coverage-html-${{ matrix.python-version }}
           path: htmlcov/
+
+      - name: Generate coverage badge
+        run: |
+          # Установить утилиту для создания бейджей (или использовать Python)
+          pip install anybadge
+          # Извлечь процент покрытия из coverage.xml
+          PERCENT=$(python -c "import xml.etree.ElementTree as ET; print(f\"{float(ET.parse('coverage.xml').getroot().attrib['line-rate'])*100:.2f}\")")
+          # Создать бейдж
+          anybadge -l coverage -v "$PERCENT%" -f coverage.svg -c green
+
+      - name: Deploy badge to 'badges' branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin badges || true
+          git checkout -B badges origin/badges 2>/dev/null || git checkout -b badges
+          cp coverage.svg .
+          git add coverage.svg
+          git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
+          git push origin badges
