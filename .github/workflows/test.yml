@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']   # убрал 3.9
+        python-version: ['3.10', '3.11']
 
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-cov   # <--- добавлено
+          pip install pytest-cov pytest-json-report
 
       - name: Run tests
         env:
@@ -34,7 +34,20 @@ jobs:
           VERSION: "ci-test"
           PYTHONPATH: .
         run: |
-          pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html
+          python -m pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html
+
+      - name: Generate test badge
+        run: |
+          export PYTHONPATH=.
+          pip install anybadge
+          total=$(python -m pytest --collect-only -q --disable-warnings | grep -c "test_")
+          python -m pytest -q --disable-warnings > pytest_output.txt
+          passed=$(grep -oP '\d+(?=\s+passed)' pytest_output.txt || echo "0")
+          if [ "$passed" = "0" ]; then
+            passed=$(grep -oP '\d+(?= passed)' pytest_output.txt || echo "0")
+          fi
+          echo "Total: $total, Passed: $passed"
+          anybadge -l "tests" -v "$passed/$total" -f tests.svg
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -48,3 +61,22 @@ jobs:
         with:
           name: coverage-html-${{ matrix.python-version }}
           path: htmlcov/
+
+      - name: Generate coverage badge
+        run: |
+          pip install anybadge
+          PERCENT=$(python -c "import xml.etree.ElementTree as ET; print(f\"{float(ET.parse('coverage.xml').getroot().attrib['line-rate'])*100:.2f}\")")
+          anybadge -l coverage -v "$PERCENT%" -f coverage.svg -c green
+
+      - name: Deploy badge to 'badges' branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
+          git fetch origin badges || true
+          git checkout -B badges origin/badges 2>/dev/null || git checkout -b badges
+          git add coverage.svg tests.svg
+          git commit -m "Update coverage and test badges [skip ci]" || echo "No changes to commit"
+          git push --force origin badges
