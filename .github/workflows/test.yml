@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
+        python-version: ['3.10', '3.11']   # убрал 3.9
 
     steps:
       - uses: actions/checkout@v4
@@ -26,17 +26,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest-cov   # <--- добавлено
 
       - name: Run tests
         env:
           ALLOWED_ORIGINS: '["http://localhost:3000", "http://localhost:5173"]'
           VERSION: "ci-test"
-          PYTHONPATH: .   # 👈 сообщаем Python, что корень проекта — это место для импорта
+          PYTHONPATH: .
         run: |
-          pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml
+          pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           flags: unittests
           fail_ci_if_error: false
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-html-${{ matrix.python-version }}
+          path: htmlcov/
