@@ -39,9 +39,16 @@ jobs:
       - name: Generate test badge
         run: |
           pip install anybadge
+          # Общее количество тестов
           total=$(pytest --collect-only -q --disable-warnings | grep -c "test_")
-          passed=$(pytest -q --disable-warnings | grep -oP '\d+(?= passed)' | tail -1)
-          anybadge -l "tests" -v "$passed/$total" -f tests.svg
+          # Количество пройденных тестов (из вывода pytest в режиме --quiet)
+          passed=$(pytest -q --disable-warnings | grep -Eo '[0-9]+ passed' | grep -Eo '[0-9]+')
+          # Если по какой-то причине passed не извлеклось, пробуем альтернативный способ
+          if [ -z "$passed" ]; then
+            passed=$(pytest -q --disable-warnings 2>&1 | grep -Eo '[0-9]+' | head -1)
+          fi
+          echo "Total: $total, Passed: $passed"
+          anybadge -l "tests" -v "$passed/$total" -f tests.svg --thresholds "1 1" --value-prefix "passed:"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
