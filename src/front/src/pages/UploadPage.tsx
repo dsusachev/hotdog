@@ -61,10 +61,10 @@ export default function UploadPage() {
     setErrorMsg('')
 
     const formData = new FormData()
-    formData.append('image', file)
+    formData.append('file', file)
 
     try {
-      const res = await fetch('/classify', {
+      const res = await fetch('/api/classify', {
         method: 'POST',
         body: formData,
       })
