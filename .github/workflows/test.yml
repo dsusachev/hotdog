@@ -69,14 +69,17 @@ jobs:
           anybadge -l coverage -v "$PERCENT%" -f coverage.svg -c green
 
       - name: Deploy badge to 'badges' branch
+      - name: Deploy badge to 'badges' branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}
-          git fetch origin badges || true
-          git checkout -B badges origin/badges 2>/dev/null || git checkout -b badges
+          git fetch origin badges
+          git checkout -B badges origin/badges
+          # Создаём или обновляем файлы бейджей
+          cp coverage.svg tests.svg .
           git add coverage.svg tests.svg
           git commit -m "Update coverage and test badges [skip ci]" || echo "No changes to commit"
-          git push --force origin badges
+          git push --force-with-lease origin badges
