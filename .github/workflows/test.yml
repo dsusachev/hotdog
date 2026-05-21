@@ -34,10 +34,11 @@ jobs:
           VERSION: "ci-test"
           PYTHONPATH: .
         run: |
-          pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html
+          python -m pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html
 
       - name: Generate test badge
         run: |
+          export PYTHONPATH=.
           pip install anybadge
           # Получаем общее количество тестов
           pytest --collect-only -q --disable-warnings --json-report --json-report-file=total.json
