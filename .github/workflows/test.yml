@@ -36,6 +36,13 @@ jobs:
         run: |
           pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html
 
+      - name: Generate test badge
+        run: |
+          pip install anybadge
+          total=$(pytest --collect-only -q --disable-warnings | grep -c "test_")
+          passed=$(pytest -q --disable-warnings | grep -oP '\d+(?= passed)' | tail -1)
+          anybadge -l "tests" -v "$passed/$total" -f tests.svg
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
@@ -65,6 +72,6 @@ jobs:
           git fetch origin badges || true
           git checkout -B badges origin/badges 2>/dev/null || git checkout -b badges
           # копирование не нужно — файл уже здесь
-          git add coverage.svg
+          git add coverage.svg tests.svg
           git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
           git push origin badges --force
