@@ -26,7 +26,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest-cov
+          pip install pytest-cov pytest-json-report
 
       - name: Run tests
         env:
@@ -39,13 +39,12 @@ jobs:
       - name: Generate test badge
         run: |
           pip install anybadge
-          total=$(pytest --collect-only -q --disable-warnings | grep -c "test_")
-          pytest -q --disable-warnings > pytest_output.txt
-          passed=$(grep -oP '\d+(?=\s+passed)' pytest_output.txt || echo "0")
-          if [ "$passed" = "0" ]; then
-            passed=$(grep -oP '\d+(?= passed)' pytest_output.txt || echo "0")
-          fi
-          echo "Total: $total, Passed: $passed"
+          # Получаем общее количество тестов
+          pytest --collect-only -q --disable-warnings --json-report --json-report-file=total.json
+          total=$(python -c "import json; print(len(json.load(open('total.json'))['tests']))")
+          # Запускаем тесты и получаем результаты
+          pytest -q --disable-warnings --json-report --json-report-file=results.json
+          passed=$(python -c "import json; data=json.load(open('results.json')); print(sum(1 for t in data['tests'] if t['outcome'] == 'passed'))")
           anybadge -l "tests" -v "$passed/$total" -f tests.svg
 
       - name: Upload coverage to Codecov
