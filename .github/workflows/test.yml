@@ -67,4 +67,4 @@ jobs:
           # копирование не нужно — файл уже здесь
           git add coverage.svg
           git commit -m "Update coverage badge [skip ci]" || echo "No changes to commit"
-          git push origin badges
+          git push origin badges --force
