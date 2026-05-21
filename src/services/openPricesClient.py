@@ -30,7 +30,7 @@ class OpenPricesClient:
     async def _get(self, path: str, params: dict) -> list:
         try:
             async with httpx.AsyncClient(
-                timeout=8.0,
+                timeout=3.0,
                 headers=self.headers,
             ) as client:
                 response = await client.get(
