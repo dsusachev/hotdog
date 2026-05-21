@@ -1,81 +1,102 @@
 import httpx
-from src.core.config import settings
 from src.core.logger import logger
 
+OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 
-class YandexPlacesClient:
+
+class OverpassClient:
     def __init__(self):
-        self.placesUrl = settings.YANDEX_PLACES_URL
+        self.url = OVERPASS_URL
+        self.headers = {
+            "User-Agent": "HotDogApp/0.1.0 (educational project)",
+        }
 
     async def searchNearby(
         self,
         query: str,
         lat: float,
         lng: float,
+        radius: int = 2000,
         limit: int = 10,
     ) -> list:
-        if not settings.YANDEX_API_KEY:
-            logger.warning("Yandex API key not set, returning mock places")
-            return self._mockPlaces(query, lat, lng)
-
-        params = {
-            "apikey": settings.YANDEX_API_KEY,
-            "text": query,
-            "ll": f"{lng},{lat}",
-            "spn": "0.1,0.1",  # Радиус поиска ~5 км
-            "lang": "ru_RU",
-            "results": limit,
-            "type": "biz",
-        }
+        # Ищем магазины, кафе и рестораны поблизости
+        overpassQuery = f"""
+        [out:json][timeout:10];
+        (
+          node["shop"="supermarket"](around:{radius},{lat},{lng});
+          node["shop"="convenience"](around:{radius},{lat},{lng});
+          node["shop"="grocery"](around:{radius},{lat},{lng});
+          node["amenity"="restaurant"](around:{radius},{lat},{lng});
+          node["amenity"="fast_food"](around:{radius},{lat},{lng});
+          node["amenity"="cafe"](around:{radius},{lat},{lng});
+        );
+        out body {limit};
+        """
 
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(self.placesUrl, params=params)
+            async with httpx.AsyncClient(
+                timeout=15.0,
+                headers=self.headers,
+            ) as client:
+                response = await client.post(
+                    self.url,
+                    data={"data": overpassQuery},
+                )
                 response.raise_for_status()
                 data = response.json()
-                features = data.get("features", [])
-                return [self._parsePlace(f) for f in features]
+                elements = data.get("elements", [])
+                return [self._parsePlace(e) for e in elements if e.get("tags")]
         except httpx.TimeoutException:
-            logger.warning("Yandex Places API timeout")
-            return []
+            logger.warning("Overpass API timeout")
+            return self._mockPlaces(lat, lng)
         except Exception as e:
-            logger.error(f"Yandex Places API error: {e}")
-            return []
+            logger.error(f"Overpass API error: {e}")
+            return self._mockPlaces(lat, lng)
 
-    def _parsePlace(self, feature: dict) -> dict:
-        props = feature.get("properties", {})
-        geo = feature.get("geometry", {})
-        coords = geo.get("coordinates", [None, None])
-        meta = props.get("CompanyMetaData", {})
+    def _parsePlace(self, element: dict) -> dict:
+        tags = element.get("tags", {})
+        name = (
+            tags.get("name")
+            or tags.get("brand")
+            or tags.get("operator")
+            or "Unnamed place"
+        )
+        category = (
+            tags.get("shop")
+            or tags.get("amenity")
+            or "place"
+        )
 
         return {
-            "name": props.get("name", ""),
-            "address": meta.get("address", ""),
-            "category": meta.get("Categories", [{}])[0].get("name", "") if meta.get("Categories") else "",
-            "longitude": coords[0],
-            "latitude": coords[1],
-            "url": meta.get("url", None),
+            "name": name,
+            "address": self._buildAddress(tags),
+            "category": category,
+            "latitude": element.get("lat"),
+            "longitude": element.get("lon"),
+            "url": tags.get("website") or None,
         }
 
-    def _mockPlaces(self, query: str, lat: float, lng: float) -> list:
+    def _buildAddress(self, tags: dict) -> str:
+        parts = []
+        if tags.get("addr:street"):
+            parts.append(tags["addr:street"])
+        if tags.get("addr:housenumber"):
+            parts.append(tags["addr:housenumber"])
+        if tags.get("addr:city"):
+            parts.append(tags["addr:city"])
+        return ", ".join(parts) if parts else "Address unknown"
+
+    def _mockPlaces(self, lat: float, lng: float) -> list:
         return [
             {
-                "name": f"Магазин 'Пятёрочка'",
-                "address": "ул. Примерная, д. 1",
-                "category": "Продуктовый магазин",
+                "name": "Supermarket",
+                "address": "Address unknown",
+                "category": "supermarket",
                 "latitude": lat + 0.001,
                 "longitude": lng + 0.001,
                 "url": None,
-            },
-            {
-                "name": f"Супермаркет 'Лента'",
-                "address": "ул. Тестовая, д. 5",
-                "category": "Супермаркет",
-                "latitude": lat + 0.002,
-                "longitude": lng - 0.001,
-                "url": None,
-            },
+            }
         ]
 
 
-yandexPlacesClient = YandexPlacesClient()
+yandexPlacesClient = OverpassClient()
