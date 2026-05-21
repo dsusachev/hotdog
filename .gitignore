@@ -5,6 +5,9 @@ output
 *.log
 *.out
 
+# macOS
+.DS_Store
+
 # Exceptions
 !.gitignore
 
