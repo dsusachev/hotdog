@@ -37,18 +37,19 @@ jobs:
           pytest test/ -v --cov=src --cov-report=term-missing --cov-report=xml --cov-report=html
 
       - name: Generate test badge
-        run: |
+      run: |
           pip install anybadge
-          # Общее количество тестов
           total=$(pytest --collect-only -q --disable-warnings | grep -c "test_")
-          # Количество пройденных тестов (из вывода pytest в режиме --quiet)
-          passed=$(pytest -q --disable-warnings | grep -Eo '[0-9]+ passed' | grep -Eo '[0-9]+')
-          # Если по какой-то причине passed не извлеклось, пробуем альтернативный способ
-          if [ -z "$passed" ]; then
-            passed=$(pytest -q --disable-warnings 2>&1 | grep -Eo '[0-9]+' | head -1)
+          # Запускаем тесты, сохраняем вывод в файл
+          pytest -q --disable-warnings > pytest_output.txt
+          # Извлекаем количество пройденных (ищем "X passed" или "X passed, Y warnings")
+          passed=$(grep -oP '\d+(?=\s+passed)' pytest_output.txt || echo "0")
+          # Если не нашли, пробуем другой паттерн
+          if [ "$passed" = "0" ]; then
+            passed=$(grep -oP '\d+(?= passed)' pytest_output.txt || echo "0")
           fi
           echo "Total: $total, Passed: $passed"
-          anybadge -l "tests" -v "$passed/$total" -f tests.svg --thresholds "1 1" --value-prefix "passed:"
+          anybadge -l "tests" -v "$passed/$total" -f tests.svg
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
