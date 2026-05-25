@@ -1,3 +1,6 @@
+![Tests](https://github.com/dsusachev/hotdog/raw/badges/tests.svg)
+![Coverage](https://github.com/dsusachev/hotdog/raw/badges/coverage.svg)
+
 AI based program to recognize bakery products.
 
 * Code is written and placed in the src/ folder.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 const YANDEX_API_KEY = 'ВАШ_КЛЮЧ_ЗДЕСЬ'
@@ -13,10 +13,14 @@ type Place = {
 type GeoStatus = 'idle' | 'loading' | 'success' | 'error'
 type PlacesStatus = 'idle' | 'loading' | 'success' | 'error'
 
-export default function ResultPage() {
+type Props = {
+  mockResult?: { label: string; confidence: number; calories: number } | null
+}
+
+export default function ResultPage({ mockResult }: Props) {
   const navigate = useNavigate()
   const { state } = useLocation()
-  const result = state?.result ?? null
+  const result = state?.result ?? mockResult ?? null
 
   const [geoStatus, setGeoStatus]       = useState<GeoStatus>('idle')
   const [placesStatus, setPlacesStatus] = useState<PlacesStatus>('idle')
@@ -24,7 +28,6 @@ export default function ResultPage() {
   const [geoError, setGeoError]         = useState('')
   const [placesError, setPlacesError]   = useState('')
 
-  // Request geolocation then fetch nearby places
   const fetchNearby = () => {
     if (!navigator.geolocation) {
       setGeoError('Геолокация не поддерживается вашим браузером')
@@ -58,7 +61,6 @@ export default function ResultPage() {
   const loadPlaces = async (lat: number, lon: number) => {
     setPlacesStatus('loading')
     try {
-      // Yandex Places API (геопоиск)
       const url = new URL('https://search-maps.yandex.ru/v1/')
       url.searchParams.set('apikey', YANDEX_API_KEY)
       url.searchParams.set('text', 'магазины продукты кафе рестораны')
@@ -74,11 +76,14 @@ export default function ResultPage() {
       const data = await res.json()
       const features = data.features ?? []
 
-      const parsed: Place[] = features.map((f: any) => {
-        const props = f.properties
-        const coords: [number, number] = f.geometry.coordinates // [lon, lat]
-        const dist = haversine(lat, lon, coords[1], coords[0])
+      const rawDistances: number[] = features.map((f: any) => {
+        const coords: [number, number] = f.geometry.coordinates
+        return haversine(lat, lon, coords[1], coords[0])
+      })
 
+      const parsed: Place[] = features.map((f: any, i: number) => {
+        const props = f.properties
+        const dist = rawDistances[i]
         return {
           name:     props.name ?? 'Без названия',
           address:  props.description ?? '',
@@ -89,16 +94,7 @@ export default function ResultPage() {
         }
       })
 
-      // Sort by distance (raw metres)
-      const withRaw = features.map((f: any) => {
-        const coords: [number, number] = f.geometry.coordinates
-        return haversine(lat, lon, coords[1], coords[0])
-      })
-      parsed.sort((a, b) => {
-        const da = withRaw[parsed.indexOf(a)] ?? 0
-        const db = withRaw[parsed.indexOf(b)] ?? 0
-        return da - db
-      })
+      parsed.sort((a, b) => rawDistances[features.indexOf(a)] - rawDistances[features.indexOf(b)])
 
       setPlaces(parsed)
       setPlacesStatus('success')
@@ -107,6 +103,8 @@ export default function ResultPage() {
       setPlacesError(err instanceof Error ? err.message : 'Не удалось загрузить места')
     }
   }
+
+  const isMock = !state?.result && !!mockResult
 
   return (
     <div className="max-w-md mx-auto py-10 px-4">
@@ -117,13 +115,22 @@ export default function ResultPage() {
         ← Назад
       </button>
 
+      {/* Demo banner */}
+      {isMock && (
+        <div className="mb-4 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+          🧪 Демо-режим — данные ненастоящие, геолокация работает
+        </div>
+      )}
+
       {/* Classification result */}
       <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
         {result ? (
           <>
             <div className="text-4xl mb-3 text-center">🍽️</div>
             <h2 className="text-xl font-bold text-center mb-4">
-              {result.label ?? 'Результат анализа'}
+              {result.is_unknown
+                ? 'Не удалось распознать 🤔'
+                : (result.category ?? result.label ?? 'Результат анализа')}
             </h2>
             {result.confidence !== undefined && (
               <div className="flex justify-between text-sm text-gray-500 mb-2">
@@ -161,7 +168,6 @@ export default function ResultPage() {
           </button>
         </div>
 
-        {/* States */}
         {geoStatus === 'idle' && (
           <div className="text-center text-gray-400 py-8">
             <div className="text-3xl mb-2">📍</div>
@@ -181,10 +187,7 @@ export default function ResultPage() {
         {geoStatus === 'error' && (
           <div className="text-center py-6">
             <p className="text-red-500 text-sm mb-3">{geoError}</p>
-            <button
-              onClick={fetchNearby}
-              className="text-sm text-teal-600 hover:underline"
-            >
+            <button onClick={fetchNearby} className="text-sm text-teal-600 hover:underline">
               Попробовать снова
             </button>
           </div>
@@ -193,10 +196,7 @@ export default function ResultPage() {
         {placesStatus === 'error' && (
           <div className="text-center py-6">
             <p className="text-red-500 text-sm mb-3">{placesError}</p>
-            <button
-              onClick={fetchNearby}
-              className="text-sm text-teal-600 hover:underline"
-            >
+            <button onClick={fetchNearby} className="text-sm text-teal-600 hover:underline">
               Попробовать снова
             </button>
           </div>
@@ -238,7 +238,6 @@ export default function ResultPage() {
   )
 }
 
-// Haversine formula — distance between two coords in metres
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000
   const toRad = (x: number) => (x * Math.PI) / 180

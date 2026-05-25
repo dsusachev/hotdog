@@ -4,14 +4,14 @@ import { useNavigate } from 'react-router-dom'
 type Status = 'idle' | 'dragging' | 'loading' | 'error'
 
 export default function UploadPage() {
-  const [file, setFile]       = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
-  const [status, setStatus]   = useState<Status>('idle')
+  const [file, setFile]         = useState<File | null>(null)
+  const [preview, setPreview]   = useState<string | null>(null)
+  const [status, setStatus]     = useState<Status>('idle')
   const [errorMsg, setErrorMsg] = useState<string>('')
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
-  const handleFile = (f: File) => {
+  const handleFile = useCallback((f: File) => {
     if (!f.type.startsWith('image/')) {
       setErrorMsg('Поддерживаются только изображения (PNG, JPG, WEBP)')
       setStatus('error')
@@ -26,7 +26,7 @@ export default function UploadPage() {
     setPreview(URL.createObjectURL(f))
     setStatus('idle')
     setErrorMsg('')
-  }
+  }, [])
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -38,7 +38,7 @@ export default function UploadPage() {
     setStatus('idle')
     const f = e.dataTransfer.files?.[0]
     if (f) handleFile(f)
-  }, [])
+  }, [handleFile])
 
   const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -47,16 +47,24 @@ export default function UploadPage() {
 
   const onDragLeave = () => setStatus('idle')
 
+  const reset = () => {
+    setFile(null)
+    setPreview(null)
+    setStatus('idle')
+    setErrorMsg('')
+    if (inputRef.current) inputRef.current.value = ''
+  }
+
   const handleAnalyze = async () => {
     if (!file) return
     setStatus('loading')
     setErrorMsg('')
 
     const formData = new FormData()
-    formData.append('image', file)
+    formData.append('file', file)
 
     try {
-      const res = await fetch('/classify', {
+      const res = await fetch('/api/classify', {
         method: 'POST',
         body: formData,
       })
@@ -67,20 +75,11 @@ export default function UploadPage() {
       }
 
       const data = await res.json()
-      // Navigate to result page, passing the response in location state
       navigate('/result', { state: { result: data } })
     } catch (err) {
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Неизвестная ошибка')
+      setErrorMsg(err instanceof Error ? err.message : 'Что-то пошло не так. Попробуйте ещё раз.')
     }
-  }
-
-  const reset = () => {
-    setFile(null)
-    setPreview(null)
-    setStatus('idle')
-    setErrorMsg('')
-    if (inputRef.current) inputRef.current.value = ''
   }
 
   const isDragging = status === 'dragging'
@@ -114,7 +113,13 @@ export default function UploadPage() {
               alt="Предпросмотр"
               className="w-full max-h-72 object-cover rounded-xl"
             />
-            {/* Overlay with filename */}
+            <button
+              onClick={(e) => { e.stopPropagation(); reset() }}
+              className="absolute top-3 right-3 w-7 h-7 bg-white border border-gray-200 rounded-full shadow text-gray-500 hover:text-red-500 hover:border-red-300 transition-colors flex items-center justify-center text-sm"
+              title="Удалить"
+            >
+              ✕
+            </button>
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-3 rounded-b-xl">
               <p className="text-white text-sm font-medium truncate">{file?.name}</p>
               <p className="text-white/70 text-xs">
@@ -141,18 +146,16 @@ export default function UploadPage() {
         onChange={onInputChange}
       />
 
-      {/* Error message */}
       {status === 'error' && errorMsg && (
         <div className="mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
           {errorMsg}
         </div>
       )}
 
-      {/* Action buttons */}
       <div className="flex gap-3 mt-6">
         <button
           onClick={preview ? reset : () => inputRef.current?.click()}
-          className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-colors"
+          className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-colors disabled:opacity-50"
           disabled={isLoading}
         >
           {preview ? 'Удалить' : 'Выбрать файл'}

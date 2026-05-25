@@ -1,8 +1,56 @@
 import { useState } from 'react'
 
+type Status = 'idle' | 'loading' | 'success' | 'error'
+
 export default function FeedbackPage() {
-  const [rating, setRating] = useState(0)
-  const [hover, setHover]   = useState(0)
+  const [rating, setRating]   = useState(0)
+  const [hover, setHover]     = useState(0)
+  const [message, setMessage] = useState('')
+  const [status, setStatus]   = useState<Status>('idle')
+
+  const handleSubmit = async () => {
+    if (!rating) return
+    setStatus('loading')
+
+    try {
+      // TODO: заменить на реальный эндпоинт когда будет готов POST /feedback
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // await fetch('/feedback', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ rating, message }),
+      // })
+      setStatus('success')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  const reset = () => {
+    setRating(0)
+    setMessage('')
+    setStatus('idle')
+  }
+
+  if (status === 'success') {
+    return (
+      <div className="max-w-md mx-auto py-10 px-4">
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center">
+          <div className="text-5xl mb-4">✅</div>
+          <h2 className="text-xl font-bold mb-2">Спасибо за отзыв!</h2>
+          <p className="text-gray-500 text-sm mb-6">Ваше мнение помогает нам становиться лучше.</p>
+          <button
+            onClick={reset}
+            className="px-6 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-colors"
+          >
+            Отправить ещё
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  const isLoading = status === 'loading'
 
   return (
     <div className="max-w-md mx-auto py-10 px-4">
@@ -19,7 +67,7 @@ export default function FeedbackPage() {
               style={{ color: (hover || rating) >= i ? '#D97706' : '#D1D5DB' }}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(0)}
-              onClick={() => setRating(i)}
+              onClick={() => !isLoading && setRating(i)}
             >
               ★
             </span>
@@ -31,13 +79,39 @@ export default function FeedbackPage() {
           <textarea
             placeholder="Ваш отзыв..."
             rows={4}
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:border-teal-600 transition-colors"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            disabled={isLoading}
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:border-teal-600 transition-colors disabled:opacity-50"
           />
         </div>
 
+        {status === 'error' && (
+          <p className="text-sm text-red-500 mb-4">Что-то пошло не так. Попробуйте ещё раз.</p>
+        )}
+
+        {!rating && (
+          <p className="text-xs text-gray-400 mb-3">Поставьте оценку чтобы отправить отзыв</p>
+        )}
+
         <div className="flex justify-end">
-          <button className="px-6 py-2.5 bg-teal-600 text-white rounded-lg font-medium cursor-default">
-            Отправить
+          <button
+            onClick={handleSubmit}
+            disabled={!rating || isLoading}
+            className={`px-6 py-2.5 rounded-lg font-medium transition-colors flex items-center gap-2
+              ${!rating || isLoading
+                ? 'bg-teal-300 text-white cursor-not-allowed'
+                : 'bg-teal-600 text-white hover:bg-teal-700 cursor-pointer'
+              }`}
+          >
+            {isLoading ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Отправляем…
+              </>
+            ) : (
+              'Отправить'
+            )}
           </button>
         </div>
       </div>
