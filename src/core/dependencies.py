@@ -18,11 +18,16 @@ async def getCurrentUser(
     if not payload:
         raise HTTPException(status_code=401, detail="Невалидный токен")
 
-    userId = payload.get("sub")
-    if not userId:
+    sub = payload.get("sub")
+    if not sub:
         raise HTTPException(status_code=401, detail="Невалидный токен")
 
-    result = await db.execute(select(User).where(User.id == userId))
+    # email в sub, мы писали UUID — поддерживаем оба варианта
+    if "@" in sub:
+        result = await db.execute(select(User).where(User.email == sub))
+    else:
+        result = await db.execute(select(User).where(User.id == sub))
+
     user = result.scalar_one_or_none()
 
     if not user:
