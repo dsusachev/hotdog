@@ -17,6 +17,7 @@ from src.api.classifyRouter import router as classifyRouter
 from src.api.productsRouter import router as productsRouter
 from src.api.pricesRouter import router as pricesRouter
 from src.api.authRouter import router as authRouter
+from src.api.feedbackRouter import router as feedbackRouter
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -45,3 +46,4 @@ app.include_router(classifyRouter, prefix="/api")
 app.include_router(productsRouter, prefix="/api")
 app.include_router(pricesRouter, prefix="/api")
 app.include_router(authRouter, prefix="/api")
+app.include_router(feedbackRouter, prefix="/api")
