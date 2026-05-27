@@ -1,3 +1,5 @@
+import asyncio
+from functools import partial
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -36,3 +38,20 @@ def decodeAccessToken(token: str) -> Optional[dict]:
         return payload
     except JWTError:
         return None
+
+
+# ========== АСИНХРОННЫЕ ОБЁРТКИ ДЛЯ ИСПОЛЬЗОВАНИЯ В FASTAPI ==========
+
+async def hashPasswordAsync(password: str) -> str:
+    """Асинхронная обёртка для hashPassword"""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, hashPassword, password)
+
+
+async def verifyPasswordAsync(plainPassword: str, hashedPassword: str) -> bool:
+    """Асинхронная обёртка для verifyPassword"""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, 
+        partial(verifyPassword, plainPassword, hashedPassword)
+    )
