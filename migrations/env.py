@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from src.db.base import Base
+from src.db.database import Base
 import src.db.models.user  # noqa: F401
 import src.db.models.search_history  # noqa: F401
 import src.db.models.uploaded_image  # noqa: F401

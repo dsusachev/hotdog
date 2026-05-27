@@ -2,7 +2,7 @@ from sqlalchemy import Column, String
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
-from src.db.base import Base
+from src.db.database import Base
 
 
 class Category(Base):
