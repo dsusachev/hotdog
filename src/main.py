@@ -18,6 +18,7 @@ from src.api.productsRouter import router as productsRouter
 from src.api.pricesRouter import router as pricesRouter
 from src.api.authRouter import router as authRouter
 from src.api.feedbackRouter import router as feedbackRouter
+import src.db.models  # noqa: F401
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
