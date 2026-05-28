@@ -1,7 +1,11 @@
-from fastapi import APIRouter, UploadFile, File
+import uuid
+from fastapi import APIRouter, Depends, UploadFile, File
+from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.core.logger import logger
 from src.core.validation import validateImageFile
+from src.db.database import getDb
+from src.db.models.search_history import SearchHistory
 from src.services.mlServiceClient import mlServiceClient
 from src.api.schemas import ClassifyResponse, TopPrediction, ErrorResponse
 
@@ -13,7 +17,7 @@ router = APIRouter()
     response_model=ClassifyResponse,
     responses={400: {"model": ErrorResponse}},
 )
-async def classifyImage(file: UploadFile = File(...)):
+async def classifyImage(file: UploadFile = File(...), db: AsyncSession = Depends(getDb)):
     imageBytes = await file.read()
 
     validateImageFile(file, imageBytes)
@@ -21,6 +25,14 @@ async def classifyImage(file: UploadFile = File(...)):
     logger.info(f"Classifying image: {file.filename} ({len(imageBytes)} bytes)")
 
     result = await mlServiceClient.classify(imageBytes, file.filename)
+
+    history = SearchHistory(
+        id=uuid.uuid4(),
+        query_text=file.filename,
+        raw_ml_response=result,
+    )
+    db.add(history)
+    await db.commit()
 
     isUnknown = result.get("confidence", 0) < settings.CONFIDENCE_THRESHOLD
 
