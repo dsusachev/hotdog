@@ -73,12 +73,10 @@ export default function UploadPage() {
         method: 'POST',
         body: formData,
       })
-
       if (!res.ok) {
         const text = await res.text()
         throw new Error(text || `Ошибка сервера: ${res.status}`)
       }
-
       const data = await res.json()
       toast.success('Продукт успешно распознан!')
       navigate('/result', { state: { result: data } })
@@ -95,10 +93,9 @@ export default function UploadPage() {
 
   return (
     <div className="max-w-lg mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold mb-2">Загрузка фото</h1>
-      <p className="text-gray-500 mb-8">Загрузите фото блюда для анализа состава.</p>
+      <h1 className="text-2xl font-bold mb-2 dark:text-gray-50">Загрузка фото</h1>
+      <p className="text-gray-500 dark:text-gray-400 mb-8">Загрузите фото блюда для анализа состава.</p>
 
-      {/* Drop zone */}
       <div
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -106,10 +103,10 @@ export default function UploadPage() {
         onClick={() => !preview && inputRef.current?.click()}
         className={`relative border-2 border-dashed rounded-xl transition-colors duration-200 overflow-hidden
           ${isDragging
-            ? 'border-teal-400 bg-teal-100'
+            ? 'border-teal-400 bg-teal-100 dark:bg-teal-900/30'
             : preview
-              ? 'border-teal-500 bg-white cursor-default'
-              : 'border-teal-500 bg-teal-50 cursor-pointer hover:bg-teal-100'
+              ? 'border-teal-500 bg-white dark:bg-gray-900 cursor-default'
+              : 'border-teal-500 bg-teal-50 dark:bg-teal-900/20 cursor-pointer hover:bg-teal-100 dark:hover:bg-teal-900/30'
           }
           ${preview ? 'p-0' : 'p-16'}
         `}
@@ -123,7 +120,7 @@ export default function UploadPage() {
             />
             <button
               onClick={(e) => { e.stopPropagation(); reset() }}
-              className="absolute top-3 right-3 w-7 h-7 bg-white border border-gray-200 rounded-full shadow text-gray-500 hover:text-red-500 hover:border-red-300 transition-colors flex items-center justify-center text-sm"
+              className="absolute top-3 right-3 w-7 h-7 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow text-gray-500 hover:text-red-500 hover:border-red-300 transition-colors flex items-center justify-center text-sm"
               title="Удалить"
             >
               ✕
@@ -138,10 +135,10 @@ export default function UploadPage() {
         ) : (
           <div className="flex flex-col items-center gap-3 select-none">
             <span className="text-5xl">{isDragging ? '📂' : '📷'}</span>
-            <span className="font-medium text-gray-700">
+            <span className="font-medium text-gray-700 dark:text-gray-300">
               {isDragging ? 'Отпустите файл' : 'Перетащите или выберите фото'}
             </span>
-            <span className="text-sm text-gray-400">PNG, JPG, WEBP · до 10 МБ</span>
+            <span className="text-sm text-gray-400 dark:text-gray-500">PNG, JPG, WEBP · до 10 МБ</span>
           </div>
         )}
       </div>
@@ -155,7 +152,7 @@ export default function UploadPage() {
       />
 
       {status === 'error' && errorMsg && (
-        <div className="mt-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+        <div className="mt-4 px-4 py-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
           {errorMsg}
         </div>
       )}
@@ -163,7 +160,7 @@ export default function UploadPage() {
       <div className="flex gap-3 mt-6">
         <button
           onClick={preview ? reset : () => inputRef.current?.click()}
-          className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-600 hover:border-teal-500 hover:text-teal-600 transition-colors disabled:opacity-50"
+          className="flex-1 py-3 border border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-lg font-medium text-gray-600 hover:border-teal-500 hover:text-teal-600 dark:hover:border-teal-500 dark:hover:text-teal-400 transition-colors disabled:opacity-50"
           disabled={isLoading}
         >
           {preview ? 'Удалить' : 'Выбрать файл'}
@@ -174,7 +171,7 @@ export default function UploadPage() {
           disabled={!file || isLoading}
           className={`flex-1 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2
             ${!file || isLoading
-              ? 'bg-teal-300 text-white cursor-not-allowed'
+              ? 'bg-teal-300 dark:bg-teal-800 text-white cursor-not-allowed'
               : 'bg-teal-600 text-white hover:bg-teal-700 cursor-pointer'
             }`}
         >

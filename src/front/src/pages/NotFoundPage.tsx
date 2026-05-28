@@ -1,8 +1,3 @@
-// NotFoundPage.tsx
-// Страница 404 — добавь маршрут в App.tsx:
-//   import NotFoundPage from './pages/NotFoundPage'
-//   <Route path="*" element={<NotFoundPage />} />
-
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
@@ -16,7 +11,6 @@ export default function NotFoundPage() {
   const navigate = useNavigate()
   const [dots, setDots] = useState('.')
 
-  // анимация троеточия — маленький живой штрих
   useEffect(() => {
     const id = setInterval(() => {
       setDots(d => d.length >= 3 ? '.' : d + '.')
@@ -26,8 +20,6 @@ export default function NotFoundPage() {
 
   return (
     <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
-
-      {/* big number */}
       <div className="relative mb-6 select-none">
         <span
           className="text-[9rem] font-bold leading-none"
@@ -40,7 +32,6 @@ export default function NotFoundPage() {
         >
           404
         </span>
-        {/* floating emoji */}
         <span
           className="absolute -top-3 -right-6 text-4xl"
           style={{ animation: 'float 3s ease-in-out infinite' }}
@@ -49,14 +40,13 @@ export default function NotFoundPage() {
         </span>
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-800 mb-2">
+      <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
         Страница не найдена{dots}
       </h1>
-      <p className="text-gray-500 text-sm max-w-xs mb-10">
+      <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mb-10">
         Похоже, этот продукт исчез с полки. Попробуй одну из страниц ниже.
       </p>
 
-      {/* suggestions */}
       <div className="flex flex-col gap-3 w-full max-w-xs mb-8">
         {SUGGESTIONS.map(({ to, label, icon }) => (
           <button
@@ -64,9 +54,9 @@ export default function NotFoundPage() {
             onClick={() => navigate(to)}
             className="
               flex items-center gap-3 w-full px-4 py-3
-              bg-white border border-gray-200 rounded-xl
-              text-sm font-medium text-gray-700
-              hover:border-teal-400 hover:text-teal-700 hover:bg-teal-50
+              bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl
+              text-sm font-medium text-gray-700 dark:text-gray-300
+              hover:border-teal-400 hover:text-teal-700 dark:hover:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-900/30
               transition-colors text-left
             "
           >
@@ -78,12 +68,11 @@ export default function NotFoundPage() {
 
       <button
         onClick={() => navigate(-1)}
-        className="text-sm text-gray-400 hover:text-teal-600 transition-colors"
+        className="text-sm text-gray-400 dark:text-gray-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
       >
         ← Вернуться назад
       </button>
 
-      {/* float keyframes injected inline so no extra CSS file needed */}
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(-5deg); }

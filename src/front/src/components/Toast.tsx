@@ -1,12 +1,5 @@
 // Toast.tsx
-// Использование:
-//   1. Оберни приложение в <ToastProvider> (в App.tsx)
-//   2. В любом компоненте: const { toast } = useToast()
-//      toast.success('Готово!') / toast.error('Ошибка') / toast.info('Инфо')
-
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
-
-// ─── Types ───────────────────────────────────────────────────────────────────
 
 type ToastType = 'success' | 'error' | 'info'
 
@@ -25,8 +18,6 @@ interface ToastContextValue {
   }
 }
 
-// ─── Context ─────────────────────────────────────────────────────────────────
-
 const ToastContext = createContext<ToastContextValue | null>(null)
 
 export function useToast(): ToastContextValue {
@@ -34,8 +25,6 @@ export function useToast(): ToastContextValue {
   if (!ctx) throw new Error('useToast must be used inside <ToastProvider>')
   return ctx
 }
-
-// ─── Single Toast Item ────────────────────────────────────────────────────────
 
 function ToastItem({
   toast,
@@ -48,13 +37,11 @@ function ToastItem({
   const [leaving, setLeaving] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // mount → slide in
   useEffect(() => {
     const raf = requestAnimationFrame(() => setVisible(true))
     return () => cancelAnimationFrame(raf)
   }, [])
 
-  // auto-dismiss
   useEffect(() => {
     const duration = toast.duration ?? 3500
     timerRef.current = setTimeout(() => dismiss(), duration)
@@ -73,13 +60,13 @@ function ToastItem({
     info:    'i',
   }
 
-  const colorMap: Record<ToastType, { bar: string; icon: string; bg: string }> = {
-    success: { bar: 'bg-teal-500',  icon: 'bg-teal-500 text-white',  bg: 'bg-white' },
-    error:   { bar: 'bg-red-500',   icon: 'bg-red-500 text-white',   bg: 'bg-white' },
-    info:    { bar: 'bg-blue-500',  icon: 'bg-blue-500 text-white',  bg: 'bg-white' },
+  const colorMap: Record<ToastType, { bar: string; icon: string; bg: string; border: string }> = {
+    success: { bar: 'bg-teal-500',  icon: 'bg-teal-500 text-white',  bg: 'bg-white dark:bg-gray-800', border: 'border-gray-100 dark:border-gray-700' },
+    error:   { bar: 'bg-red-500',   icon: 'bg-red-500 text-white',   bg: 'bg-white dark:bg-gray-800', border: 'border-gray-100 dark:border-gray-700' },
+    info:    { bar: 'bg-blue-500',  icon: 'bg-blue-500 text-white',  bg: 'bg-white dark:bg-gray-800', border: 'border-gray-100 dark:border-gray-700' },
   }
 
-  const { bar, icon, bg } = colorMap[toast.type]
+  const { bar, icon, bg, border } = colorMap[toast.type]
 
   return (
     <div
@@ -91,33 +78,21 @@ function ToastItem({
       }}
       className={`
         relative flex items-center gap-3 w-80 max-w-[calc(100vw-2rem)]
-        ${bg} rounded-xl shadow-lg border border-gray-100
+        ${bg} rounded-xl shadow-lg border ${border}
         px-4 py-3 cursor-pointer overflow-hidden select-none
       `}
     >
-      {/* left colour bar */}
       <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-l-xl ${bar}`} />
-
-      {/* icon */}
-      <span className={`
-        flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center
-        text-xs font-bold ${icon}
-      `}>
+      <span className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${icon}`}>
         {icons[toast.type]}
       </span>
-
-      {/* message */}
-      <p className="flex-1 text-sm text-gray-800 font-medium leading-snug pr-2">
+      <p className="flex-1 text-sm text-gray-800 dark:text-gray-100 font-medium leading-snug pr-2">
         {toast.message}
       </p>
-
-      {/* dismiss × */}
-      <span className="text-gray-300 text-xs hover:text-gray-500 transition-colors">✕</span>
+      <span className="text-gray-300 dark:text-gray-600 text-xs hover:text-gray-500 dark:hover:text-gray-400 transition-colors">✕</span>
     </div>
   )
 }
-
-// ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
@@ -140,8 +115,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-
-      {/* Portal-like fixed container */}
       <div className="fixed bottom-24 right-4 md:bottom-6 z-[9999] flex flex-col gap-2 items-end pointer-events-none">
         {toasts.map(t => (
           <div key={t.id} className="pointer-events-auto">
