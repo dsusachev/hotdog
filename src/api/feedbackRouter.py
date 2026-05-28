@@ -1,40 +1,27 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from src.db.database import getDb
 from src.db.models.feedback import Feedback
-from src.db.models.user import User
-from src.core.dependencies import getCurrentUser
-from src.schemas.feedback import FeedbackCreateRequest, FeedbackResponse
+from src.core.logger import logger
 
 router = APIRouter()
 
 
+class FeedbackRequest(BaseModel):
+    rating: int = Field(..., ge=1, le=5)
+    message: str | None = None
+
+
+class FeedbackResponse(BaseModel):
+    status: str = "ok"
+
+
 @router.post("/feedback", response_model=FeedbackResponse)
-async def createFeedback(
-    data: FeedbackCreateRequest,
-    db: AsyncSession = Depends(getDb),
-    currentUser: User = Depends(getCurrentUser),
-):
-    feedback = Feedback(
-        user_id=currentUser.id,
-        search_history_id=data.search_history_id,
-        rating=data.rating,
-        comment=data.comment,
-    )
+async def submitFeedback(data: FeedbackRequest, db: AsyncSession = Depends(getDb)):
+    feedback = Feedback(rating=data.rating, message=data.message)
     db.add(feedback)
     await db.commit()
-    await db.refresh(feedback)
-    return feedback
-
-
-@router.get("/feedback/my", response_model=list[FeedbackResponse])
-async def getMyFeedback(
-    db: AsyncSession = Depends(getDb),
-    currentUser: User = Depends(getCurrentUser),
-):
-    result = await db.execute(
-        select(Feedback).where(Feedback.user_id == currentUser.id)
-    )
-    return result.scalars().all()
+    logger.info(f"Feedback saved: rating={data.rating}")
+    return FeedbackResponse()

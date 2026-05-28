@@ -11,8 +11,6 @@ from src.db.database import Base
 import src.db.models.user  # noqa: F401
 import src.db.models.search_history  # noqa: F401
 import src.db.models.uploaded_image  # noqa: F401
-import src.db.models.category  # noqa: F401
-import src.db.models.product  # noqa: F401
 import src.db.models.feedback  # noqa: F401
 
 config = context.config

@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-
 from src.core.config import settings
 from src.core.errorHandlers import (
     httpExceptionHandler,
@@ -18,7 +17,8 @@ from src.api.productsRouter import router as productsRouter
 from src.api.pricesRouter import router as pricesRouter
 from src.api.authRouter import router as authRouter
 from src.api.feedbackRouter import router as feedbackRouter
-import src.db.models  # noqa: F401
+from src.db.database import engine
+from src.db.models.user import Base
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -26,12 +26,10 @@ app = FastAPI(
     description="API for food recognition service",
 )
 
-# Error handlers
 app.add_exception_handler(HTTPException, httpExceptionHandler)
 app.add_exception_handler(RequestValidationError, validationExceptionHandler)
 app.add_exception_handler(Exception, unexpectedExceptionHandler)
 
-# Middleware
 app.add_middleware(BaseHTTPMiddleware, dispatch=loggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -40,6 +38,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 app.include_router(router, prefix="/api")
 app.include_router(healthRouter)
