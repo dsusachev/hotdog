@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-
 from src.core.config import settings
 from src.core.errorHandlers import (
     httpExceptionHandler,
@@ -27,12 +26,10 @@ app = FastAPI(
     description="API for food recognition service",
 )
 
-# Error handlers
 app.add_exception_handler(HTTPException, httpExceptionHandler)
 app.add_exception_handler(RequestValidationError, validationExceptionHandler)
 app.add_exception_handler(Exception, unexpectedExceptionHandler)
 
-# Middleware
 app.add_middleware(BaseHTTPMiddleware, dispatch=loggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
