@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../components/Toast'
 
 type Status = 'idle' | 'dragging' | 'loading' | 'error'
 
@@ -10,23 +11,27 @@ export default function UploadPage() {
   const [errorMsg, setErrorMsg] = useState<string>('')
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
+  const { toast } = useToast()
 
   const handleFile = useCallback((f: File) => {
     if (!f.type.startsWith('image/')) {
       setErrorMsg('Поддерживаются только изображения (PNG, JPG, WEBP)')
       setStatus('error')
+      toast.error('Поддерживаются только изображения (PNG, JPG, WEBP)')
       return
     }
     if (f.size > 10 * 1024 * 1024) {
       setErrorMsg('Файл слишком большой. Максимум — 10 МБ')
       setStatus('error')
+      toast.error('Файл слишком большой. Максимум — 10 МБ')
       return
     }
     setFile(f)
     setPreview(URL.createObjectURL(f))
     setStatus('idle')
     setErrorMsg('')
-  }, [])
+    toast.info('Фото загружено — нажми «Анализировать»')
+  }, [toast])
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -75,10 +80,13 @@ export default function UploadPage() {
       }
 
       const data = await res.json()
+      toast.success('Продукт успешно распознан!')
       navigate('/result', { state: { result: data } })
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Что-то пошло не так. Попробуйте ещё раз.'
       setStatus('error')
-      setErrorMsg(err instanceof Error ? err.message : 'Что-то пошло не так. Попробуйте ещё раз.')
+      setErrorMsg(msg)
+      toast.error(msg)
     }
   }
 

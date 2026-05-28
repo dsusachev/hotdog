@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useToast } from '../components/Toast'
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
@@ -7,6 +8,7 @@ export default function FeedbackPage() {
   const [hover, setHover]     = useState(0)
   const [message, setMessage] = useState('')
   const [status, setStatus]   = useState<Status>('idle')
+  const { toast } = useToast()
 
   const handleSubmit = async () => {
     if (!rating) return
@@ -15,14 +17,11 @@ export default function FeedbackPage() {
     try {
       // TODO: заменить на реальный эндпоинт когда будет готов POST /feedback
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      // await fetch('/feedback', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ rating, message }),
-      // })
       setStatus('success')
+      toast.success('Спасибо! Ваш отзыв отправлен.')
     } catch {
       setStatus('error')
+      toast.error('Что-то пошло не так. Попробуйте ещё раз.')
     }
   }
 
