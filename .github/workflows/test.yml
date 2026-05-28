@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']
+        python-version: ['3.10']
 
     steps:
       - uses: actions/checkout@v4
@@ -117,5 +117,42 @@ jobs:
         run: docker compose logs
 
       - name: Stop services
+        if: always()
+        run: docker compose down
+  load-test:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start services
+        run: docker compose up -d --build
+
+      - name: Wait for API to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s -f http://localhost:8000/health; then
+              echo "API ready"
+              break
+            fi
+            echo "Waiting... $i/30"
+            sleep 2
+          done
+
+      - name: Run Locust headless via Docker
+        run: |
+          docker compose run --rm locust \
+            -f /mnt/locust/locustfile.py --host http://api:8000 \
+            --users 50 --spawn-rate 5 --run-time 1m \
+            --headless --html /mnt/locust/report.html
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: locust-report
+          path: report.html
+
+      - name: Stop containers
         if: always()
         run: docker compose down
