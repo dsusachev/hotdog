@@ -1,23 +1,6 @@
 version: '3.9'
 
 services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/hotdog
-      - ALLOWED_ORIGINS=["http://localhost:3000","http://localhost:5173"]
-      - VERSION=docker-dev
-    env_file:
-      - .env.docker
-    depends_on:
-      - db
-    volumes:
-      - ./src:/app/src   # для разработки (hot-reload)
-      - ./test:/app/test
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
-
   db:
     image: postgres:15
     environment:
@@ -26,8 +9,24 @@ services:
       POSTGRES_DB: hotdog
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d hotdog"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-volumes:
-  postgres_data:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: pass
+      DB_NAME: hotdog
+      DB_PORT: 5432
+      ALLOWED_ORIGINS: '["http://localhost:3000", "http://localhost:5173"]'
+      VERSION: "ci-test"
+    depends_on:
+      db:
+        condition: service_healthy
