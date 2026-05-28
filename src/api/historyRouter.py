@@ -6,7 +6,9 @@ from sqlalchemy import select
 
 from src.db.database import getDb
 from src.db.models.search_history import SearchHistory
+from src.db.models.user import User
 from src.core.logger import logger
+from src.core.dependencies import getCurrentUser
 
 router = APIRouter()
 
@@ -20,7 +22,10 @@ class HistoryEntry(BaseModel):
 
 
 @router.get("/history", response_model=List[HistoryEntry])
-async def getHistory(db: AsyncSession = Depends(getDb)):
+async def getHistory(
+    db: AsyncSession = Depends(getDb),
+    currentUser: User = Depends(getCurrentUser),
+):
     result = await db.execute(
         select(SearchHistory).order_by(SearchHistory.created_at.desc()).limit(50)
     )

@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/Toast'
+import { authFetch } from '../utils/authFetch'
 
 type Status = 'idle' | 'dragging' | 'loading' | 'error'
 
@@ -161,7 +162,7 @@ export default function UploadPage() {
     formData.append('file', file)
 
     try {
-      const res = await fetch('/api/classify', {
+      const res = await authFetch('/api/classify', {
         method: 'POST',
         body: formData,
       })
