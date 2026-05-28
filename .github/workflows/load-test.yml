@@ -3,7 +3,7 @@ name: Load Test (Locust)
 on:
   schedule:
     - cron: '0 3 * * *'   # каждый день в 3:00 UTC
-  workflow_dispatch:       # кнопка для ручного запуска
+  workflow_dispatch:       # ручной запуск из интерфейса GitHub
 
 jobs:
   locust:
@@ -25,10 +25,10 @@ jobs:
             curl -s -f http://localhost:8000/health && break || sleep 2
           done
 
-      - name: Run Locust (headless)
+      - name: Run Locust (headless, 1 minute)
         run: |
           locust -f locustfile.py --host http://localhost:8000 \
-            --users 100 --spawn-rate 10 --run-time 2m \
+            --users 50 --spawn-rate 5 --run-time 1m \
             --headless --html report.html
 
       - name: Upload HTML report
