@@ -1,23 +1,19 @@
 import asyncio
 from functools import partial
-from passlib.context import CryptContext
+import bcrypt
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional
 
 from src.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hashPassword(password: str) -> str:
-    """Шифрует пароль через bcrypt"""
-    return pwd_context.hash(password)
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def verifyPassword(plainPassword: str, hashedPassword: str) -> bool:
-    """Проверяет пароль против хэша"""
-    return pwd_context.verify(plainPassword, hashedPassword)
+    return bcrypt.checkpw(plainPassword.encode("utf-8"), hashedPassword.encode("utf-8"))
 
 
 def createAccessToken(data: dict, expiresDelta: Optional[timedelta] = None) -> str:
