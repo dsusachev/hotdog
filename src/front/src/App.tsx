@@ -23,6 +23,7 @@ const MOCK_RESULT = {
 function App() {
   return (
     <Router>
+ feature/upload-page
       <ToastProvider>
         <div className="min-h-screen bg-[#F7F4EF] flex flex-col">
           <Navbar />
@@ -45,6 +46,25 @@ function App() {
           <BottomNav />
         </div>
       </ToastProvider>
+      <div className="min-h-screen bg-[#F7F4EF] flex flex-col">
+        <Navbar />
+        <main className="flex-1 pb-20 md:pb-0 max-w-5xl mx-auto w-full px-4 py-8">
+          <Routes>
+            <Route path="/"          element={<HomePage />} />
+            <Route path="/upload"    element={<UploadPage />} />
+            <Route path="/search"    element={<SearchPage />} />
+            <Route path="/recipes"   element={<RecipesPage />} />
+            <Route path="/history"   element={<HistoryPage />} />
+            <Route path="/feedback"  element={<FeedbackPage />} />
+            <Route path="/login"     element={<LoginPage />} />
+            <Route path="/register"  element={<RegisterPage />} />
+            <Route path="/result"    element={<ResultPage />} />
+            <Route path="/result/demo" element={<ResultPage mockResult={MOCK_RESULT} />} />
+          </Routes>
+        </main>
+        <Footer />
+        <BottomNav />
+      </div>
     </Router>
   )
 }

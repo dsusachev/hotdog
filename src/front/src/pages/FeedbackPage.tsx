@@ -17,6 +17,11 @@ export default function FeedbackPage() {
     try {
       // TODO: заменить на реальный эндпоинт когда будет готов POST /feedback
       await new Promise((resolve) => setTimeout(resolve, 1000))
+      // await fetch('/feedback', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ rating, message }),
+      // })
       setStatus('success')
       toast.success('Спасибо! Ваш отзыв отправлен.')
     } catch {

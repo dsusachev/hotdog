@@ -128,7 +128,9 @@ export default function ResultPage({ mockResult }: Props) {
           <>
             <div className="text-4xl mb-3 text-center">🍽️</div>
             <h2 className="text-xl font-bold text-center mb-4">
-              {result.label ?? 'Результат анализа'}
+              {result.is_unknown
+                ? 'Не удалось распознать 🤔'
+                : (result.category ?? result.label ?? 'Результат анализа')}
             </h2>
             {result.confidence !== undefined && (
               <div className="flex justify-between text-sm text-gray-500 mb-2">

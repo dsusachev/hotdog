@@ -1,19 +1,20 @@
 # Output directories
 output
-
 # Generated files
 *.log
 *.out
-
+# macOS
+.DS_Store
 # Exceptions
 !.gitignore
-
 # Environment files
 .env
 venv/
+.venv/
 __pycache__/
 *.pyc
-
+# Node
+node_modules/
 # ML-specific
 ml/.venv/
 ml/dataset/
@@ -24,7 +25,5 @@ ml/own_test_set/*/*.jpeg
 ml/own_test_set/*/*.png
 ml/own_test_set/*/*.webp
 ml/own_test_set/*/*.heic
-
 Machine Learning/
-
 !ml/requirements.txt
