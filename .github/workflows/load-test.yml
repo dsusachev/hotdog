@@ -2,8 +2,8 @@ name: Load Test (Locust)
 
 on:
   schedule:
-    - cron: '0 3 * * *'   # каждый день в 3:00 UTC
-  workflow_dispatch:       # ручной запуск из интерфейса GitHub
+    - cron: '0 3 * * *'
+  workflow_dispatch:
 
 jobs:
   locust:
@@ -15,6 +15,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install zope.event   # <-- исправление
 
       - name: Start services with docker compose
         run: docker compose up -d --build
