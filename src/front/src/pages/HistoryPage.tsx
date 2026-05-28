@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { SkeletonHistoryItem } from '../components/Skeleton'
+import { authFetch } from '../utils/authFetch'
 
 type HistoryEntry = {
   id: string
@@ -14,7 +15,7 @@ export default function HistoryPage() {
   const [history, setHistory]     = useState<HistoryEntry[]>([])
 
   useEffect(() => {
-    fetch('/api/history')
+    authFetch('/api/history')
       .then(r => r.json())
       .then(data => { setHistory(data); setIsLoading(false) })
       .catch(() => setIsLoading(false))
