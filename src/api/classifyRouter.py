@@ -34,8 +34,9 @@ async def classifyImage(
 
     history = SearchHistory(
         id=uuid.uuid4(),
+        user_id=currentUser.id,
         query_text=file.filename,
-        raw_ml_response=result,
+        raw_ml_response={**result, "type": "classify"},
     )
     db.add(history)
     await db.commit()
