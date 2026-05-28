@@ -8,6 +8,18 @@
     background-color: #F7F4EF;
     color: #1C1C1C;
   }
+
+  .dark body {
+    background-color: #030712;
+    color: #f9fafb;
+  }
+
+  /* smoother dark mode transitions */
+  *, *::before, *::after {
+    transition-property: background-color, border-color, color;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
+  }
 }
 
 @layer utilities {

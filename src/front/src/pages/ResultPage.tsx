@@ -34,7 +34,6 @@ export default function ResultPage({ mockResult }: Props) {
       setGeoStatus('error')
       return
     }
-
     setGeoStatus('loading')
     setPlaces([])
     setGeoError('')
@@ -110,45 +109,44 @@ export default function ResultPage({ mockResult }: Props) {
     <div className="max-w-md mx-auto py-10 px-4">
       <button
         onClick={() => navigate(-1)}
-        className="text-sm text-gray-500 hover:text-teal-600 mb-6 block"
+        className="text-sm text-gray-500 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 mb-6 block transition-colors"
       >
         ← Назад
       </button>
 
-      {/* Demo banner */}
       {isMock && (
-        <div className="mb-4 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-700 text-sm">
+        <div className="mb-4 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-amber-700 dark:text-amber-400 text-sm">
           🧪 Демо-режим — данные ненастоящие, геолокация работает
         </div>
       )}
 
       {/* Classification result */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-6">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 mb-6">
         {result ? (
           <>
             <div className="text-4xl mb-3 text-center">🍽️</div>
-            <h2 className="text-xl font-bold text-center mb-4">
+            <h2 className="text-xl font-bold text-center mb-4 dark:text-gray-50">
               {result.is_unknown
                 ? 'Не удалось распознать 🤔'
                 : (result.category ?? result.label ?? 'Результат анализа')}
             </h2>
             {result.confidence !== undefined && (
-              <div className="flex justify-between text-sm text-gray-500 mb-2">
+              <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
                 <span>Уверенность</span>
-                <span className="font-medium text-teal-600">
+                <span className="font-medium text-teal-600 dark:text-teal-400">
                   {Math.round(result.confidence * 100)}%
                 </span>
               </div>
             )}
             {result.calories !== undefined && (
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                 <span>Калории (на 100г)</span>
-                <span className="font-medium">{result.calories} ккал</span>
+                <span className="font-medium dark:text-gray-200">{result.calories} ккал</span>
               </div>
             )}
           </>
         ) : (
-          <div className="text-center text-gray-400">
+          <div className="text-center text-gray-400 dark:text-gray-500">
             <div className="text-5xl mb-4">📊</div>
             <p>Результат анализа появится здесь</p>
           </div>
@@ -156,27 +154,27 @@ export default function ResultPage({ mockResult }: Props) {
       </div>
 
       {/* Nearby places */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-6">
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-gray-800">Поблизости</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-100">Поблизости</h3>
           <button
             onClick={fetchNearby}
             disabled={geoStatus === 'loading' || placesStatus === 'loading'}
-            className="text-sm text-teal-600 font-medium hover:underline disabled:opacity-50 disabled:no-underline"
+            className="text-sm text-teal-600 dark:text-teal-400 font-medium hover:underline disabled:opacity-50 disabled:no-underline"
           >
             {geoStatus === 'idle' ? 'Найти рядом' : 'Обновить'}
           </button>
         </div>
 
         {geoStatus === 'idle' && (
-          <div className="text-center text-gray-400 py-8">
+          <div className="text-center text-gray-400 dark:text-gray-500 py-8">
             <div className="text-3xl mb-2">📍</div>
             <p className="text-sm">Нажмите «Найти рядом» чтобы увидеть магазины и кафе поблизости</p>
           </div>
         )}
 
         {(geoStatus === 'loading' || placesStatus === 'loading') && (
-          <div className="text-center text-gray-400 py-8">
+          <div className="text-center text-gray-400 dark:text-gray-500 py-8">
             <div className="inline-block w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mb-3" />
             <p className="text-sm">
               {geoStatus === 'loading' ? 'Определяем местоположение…' : 'Ищем места рядом…'}
@@ -186,8 +184,8 @@ export default function ResultPage({ mockResult }: Props) {
 
         {geoStatus === 'error' && (
           <div className="text-center py-6">
-            <p className="text-red-500 text-sm mb-3">{geoError}</p>
-            <button onClick={fetchNearby} className="text-sm text-teal-600 hover:underline">
+            <p className="text-red-500 dark:text-red-400 text-sm mb-3">{geoError}</p>
+            <button onClick={fetchNearby} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">
               Попробовать снова
             </button>
           </div>
@@ -195,21 +193,21 @@ export default function ResultPage({ mockResult }: Props) {
 
         {placesStatus === 'error' && (
           <div className="text-center py-6">
-            <p className="text-red-500 text-sm mb-3">{placesError}</p>
-            <button onClick={fetchNearby} className="text-sm text-teal-600 hover:underline">
+            <p className="text-red-500 dark:text-red-400 text-sm mb-3">{placesError}</p>
+            <button onClick={fetchNearby} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">
               Попробовать снова
             </button>
           </div>
         )}
 
         {placesStatus === 'success' && places.length === 0 && (
-          <div className="text-center text-gray-400 py-8">
+          <div className="text-center text-gray-400 dark:text-gray-500 py-8">
             <p className="text-sm">Рядом ничего не найдено</p>
           </div>
         )}
 
         {placesStatus === 'success' && places.length > 0 && (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {places.map((place, i) => (
               <li key={i} className="py-3 flex items-start gap-3">
                 <span className="text-xl mt-0.5">
@@ -218,15 +216,15 @@ export default function ResultPage({ mockResult }: Props) {
                     : '🛒'}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-800 text-sm truncate">{place.name}</p>
+                  <p className="font-medium text-gray-800 dark:text-gray-100 text-sm truncate">{place.name}</p>
                   {place.category && (
-                    <p className="text-xs text-teal-600 mb-0.5">{place.category}</p>
+                    <p className="text-xs text-teal-600 dark:text-teal-400 mb-0.5">{place.category}</p>
                   )}
                   {place.address && (
-                    <p className="text-xs text-gray-400 truncate">{place.address}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{place.address}</p>
                   )}
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap mt-1">
+                <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap mt-1">
                   {place.distance}
                 </span>
               </li>
