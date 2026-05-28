@@ -23,7 +23,7 @@ export default function SearchPage() {
     setResults([])
 
     try {
-      const res = await fetch(`/products/search?query=${encodeURIComponent(query.trim())}`)
+      const res = await fetch(`/api/products/search?query=${encodeURIComponent(query.trim())}`)
       if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`)
       const data = await res.json()
       setResults(data)
