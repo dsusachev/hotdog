@@ -14,11 +14,10 @@ export default function HistoryPage() {
   const [history, setHistory]     = useState<HistoryEntry[]>([])
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setHistory([])
-      setIsLoading(false)
-    }, 900)
-    return () => clearTimeout(timer)
+    fetch('/api/history')
+      .then(r => r.json())
+      .then(data => { setHistory(data); setIsLoading(false) })
+      .catch(() => setIsLoading(false))
   }, [])
 
   return (

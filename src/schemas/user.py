@@ -9,10 +9,16 @@ class UserCreateRequest(BaseModel):
 
 class UserResponse(BaseModel):
     """Схема ответа с данными пользователя"""
-    id: int
+    id: str
     email: EmailStr
-    display_name: str
+    display_name: str | None
     is_active: bool
+
+    from pydantic import field_validator
+    @field_validator('id', mode='before')
+    @classmethod
+    def uuid_to_str(cls, v):
+        return str(v)
 
     class Config:
         from_attributes = True  # Для работы с SQLAlchemy моделями (ранее orm_mode)
