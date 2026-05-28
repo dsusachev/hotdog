@@ -1,12 +1,22 @@
-  locust:
+  load-test:
     runs-on: ubuntu-latest
+    needs: test          # запускается после успешного прохождения основных тестов (можно убрать, если хотите параллельно)
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Create virtual environment
+        run: python -m venv venv
+
       - name: Install dependencies
         run: |
+          source venv/bin/activate
           python -m pip install --upgrade pip
-          pip install --user --upgrade locust[all]
+          pip install locust[all]
 
       - name: Start services with docker compose
         run: docker compose up -d --build
@@ -17,14 +27,16 @@
             curl -s -f http://localhost:8000/health && break || sleep 2
           done
 
-      - name: Run Locust (headless, 1 minute)
+      - name: Run Locust (1 minute)
         run: |
+          source venv/bin/activate
           locust -f locustfile.py --host http://localhost:8000 \
             --users 50 --spawn-rate 5 --run-time 1m \
             --headless --html report.html
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: locust-report
           path: report.html
