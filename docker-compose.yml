@@ -1,5 +1,4 @@
 version: '3.9'
-
 services:
   db:
     image: postgres:15
@@ -7,8 +6,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: hotdog
-    ports:
-      - "5432:5432"
+    # ports:               # закомментируйте или удалите эту секцию
+    #   - "5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d hotdog"]
       interval: 5s
