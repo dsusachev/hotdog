@@ -17,7 +17,7 @@ def mock_db_session():
 def mock_user():
     """Mock user object"""
     user = Mock()
-    user.id = 1
+    user.id = UUID
     user.email = "test@example.com"
     user.password_hash = "hashed_password"
     user.display_name = "Test User"
