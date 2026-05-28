@@ -17,6 +17,8 @@ from src.api.classifyRouter import router as classifyRouter
 from src.api.productsRouter import router as productsRouter
 from src.api.pricesRouter import router as pricesRouter
 from src.api.authRouter import router as authRouter
+from src.db.database import engine
+from src.db.models.user import Base
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -38,6 +40,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.on_event("startup")
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 app.include_router(router, prefix="/api")
 app.include_router(healthRouter)

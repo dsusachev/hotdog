@@ -86,3 +86,26 @@ jobs:
           git add coverage.svg tests.svg
           git commit -m "Update coverage and test badges [skip ci]" || echo "No changes to commit"
           git push --force origin badges
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run API in background
+        run: |
+          uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5  # даём время на запуск
+
+      - name: Check health endpoint
+        run: |
+          curl --fail --retry 3 --retry-delay 2 http://localhost:8000/health
