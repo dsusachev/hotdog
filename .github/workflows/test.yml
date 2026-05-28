@@ -125,27 +125,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install locust zope.event
-
       - name: Start services with docker compose
         run: docker compose up -d --build
 
-      - name: Wait for API
+      - name: Wait for API to be ready
         run: |
           for i in {1..30}; do
             curl -s -f http://localhost:8000/health && break || sleep 2
           done
 
-      - name: Run Locust (1 minute)
+      - name: Run Locust (headless, 1 minute) via Docker
         run: |
-          locust -f locustfile.py --host http://localhost:8000 \
-            --users 30 --spawn-rate 5 --run-time 1m \
-            --headless --html report.html
+          docker compose run --rm locust \
+            -f /mnt/locust/locustfile.py --host http://api:8000 \
+            --users 50 --spawn-rate 5 --run-time 1m \
+            --headless --html /mnt/locust/report.html
 
-      - name: Upload report
+      - name: Upload HTML report
         uses: actions/upload-artifact@v4
         if: always()
         with:
