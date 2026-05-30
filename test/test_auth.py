@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, Mock, patch
+from uuid import UUID, uuid4
 from fastapi.testclient import TestClient
 from src.main import app
 
@@ -17,7 +18,7 @@ def mock_db_session():
 def mock_user():
     """Mock user object"""
     user = Mock()
-    user.id = UUID
+    user.id = uuid4()
     user.email = "test@example.com"
     user.password_hash = "hashed_password"
     user.display_name = "Test User"
@@ -48,7 +49,7 @@ def mock_db_session_no_user(mock_db_session):
     
     mock_db_session.add = Mock()
     mock_db_session.commit = AsyncMock()
-    mock_db_session.refresh = AsyncMock(side_effect=lambda x: setattr(x, 'id', 1))
+    mock_db_session.refresh = AsyncMock(side_effect=lambda x: setattr(x, 'id', uuid4()))
     
     return mock_db_session
 
