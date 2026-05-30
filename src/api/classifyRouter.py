@@ -6,8 +6,10 @@ from src.core.logger import logger
 from src.core.validation import validateImageFile
 from src.db.database import getDb
 from src.db.models.search_history import SearchHistory
+from src.db.models.user import User
 from src.services.mlServiceClient import mlServiceClient
 from src.api.schemas import ClassifyResponse, TopPrediction, ErrorResponse
+from src.core.dependencies import getCurrentUser
 
 router = APIRouter()
 
@@ -17,7 +19,11 @@ router = APIRouter()
     response_model=ClassifyResponse,
     responses={400: {"model": ErrorResponse}},
 )
-async def classifyImage(file: UploadFile = File(...), db: AsyncSession = Depends(getDb)):
+async def classifyImage(
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(getDb),
+    currentUser: User = Depends(getCurrentUser),
+):
     imageBytes = await file.read()
 
     validateImageFile(file, imageBytes)
@@ -28,8 +34,9 @@ async def classifyImage(file: UploadFile = File(...), db: AsyncSession = Depends
 
     history = SearchHistory(
         id=uuid.uuid4(),
+        user_id=currentUser.id,
         query_text=file.filename,
-        raw_ml_response=result,
+        raw_ml_response={**result, "type": "classify"},
     )
     db.add(history)
     await db.commit()

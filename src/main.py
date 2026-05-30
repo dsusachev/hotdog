@@ -17,6 +17,8 @@ from src.api.productsRouter import router as productsRouter
 from src.api.pricesRouter import router as pricesRouter
 from src.api.authRouter import router as authRouter
 from src.api.feedbackRouter import router as feedbackRouter
+from src.api.historyRouter import router as historyRouter
+from src.api.recipesRouter import router as recipesRouter
 from src.db.database import engine
 from src.db.models.user import Base
 
@@ -51,3 +53,5 @@ app.include_router(productsRouter, prefix="/api")
 app.include_router(pricesRouter, prefix="/api")
 app.include_router(authRouter, prefix="/api")
 app.include_router(feedbackRouter, prefix="/api")
+app.include_router(historyRouter, prefix="/api")
+app.include_router(recipesRouter, prefix="/api")

@@ -8,6 +8,7 @@ from src.db.models.user import User
 from src.core.security import decodeAccessToken
 
 oauth2Scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2SchemeOptional = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
 
 async def getCurrentUser(
@@ -22,12 +23,7 @@ async def getCurrentUser(
     if not sub:
         raise HTTPException(status_code=401, detail="Невалидный токен")
 
-    # email в sub, мы писали UUID — поддерживаем оба варианта
-    if "@" in sub:
-        result = await db.execute(select(User).where(User.email == sub))
-    else:
-        result = await db.execute(select(User).where(User.id == sub))
-
+    result = await db.execute(select(User).where(User.email == userId))
     user = result.scalar_one_or_none()
 
     if not user:
@@ -37,3 +33,19 @@ async def getCurrentUser(
         raise HTTPException(status_code=403, detail="Аккаунт заблокирован")
 
     return user
+
+
+async def getCurrentUserOptional(
+    token: str | None = Depends(oauth2SchemeOptional),
+    db: AsyncSession = Depends(getDb),
+) -> User | None:
+    if not token:
+        return None
+    payload = decodeAccessToken(token)
+    if not payload:
+        return None
+    userId = payload.get("sub")
+    if not userId:
+        return None
+    result = await db.execute(select(User).where(User.email == userId))
+    return result.scalar_one_or_none()
