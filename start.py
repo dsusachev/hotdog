@@ -23,7 +23,28 @@ ARTIFACT  = ROOT / "ml" / "artifacts" / "resnet50_v1_20260519.pt"
 RESET  = "\033[0m"
 COLORS = ["\033[36m", "\033[32m", "\033[35m"]  # cyan, green, magenta
 
-use_real_ml = ARTIFACT.exists()
+# Run the real model only when we can actually load it: torch installed AND the
+# artifact present. The artifact is fetched on demand from the GitHub Release, so
+# a fresh clone gets the real model automatically. Anything missing (no torch, no
+# network) gracefully falls back to the stub instead of crashing the service.
+def _torch_available() -> bool:
+    import importlib.util
+    return importlib.util.find_spec("torch") is not None
+
+
+use_real_ml = False
+if not _torch_available():
+    print("  [start] torch не установлен (pip install -r ml/requirements.txt) — заглушка")
+else:
+    if not ARTIFACT.exists():
+        try:
+            sys.path.insert(0, str(ROOT / "ml"))
+            from scripts.download_model import ensure_artifact
+
+            ensure_artifact()
+        except Exception as exc:  # noqa: BLE001 - offline / download error -> stub
+            print(f"  [start] не удалось скачать модель ({exc}); использую заглушку")
+    use_real_ml = ARTIFACT.exists()
 
 if use_real_ml:
     ml_cmd = [sys.executable, "ml/serve.py"]
