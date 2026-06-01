@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SkeletonSearchResult } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
+import { proxyImage } from '../utils/proxyImage'
 
 type NutritionFacts = {
   calories_per_100g: number | null
@@ -97,7 +98,7 @@ export default function SearchPage() {
           {results.map(r => (
             <div key={r.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex items-center gap-4">
               {r.image_url ? (
-                <img src={r.image_url} alt={r.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+                <img src={proxyImage(r.image_url)} alt={r.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100 dark:bg-gray-800" />
               ) : (
                 <div className="w-10 h-10 rounded-lg bg-teal-50 dark:bg-teal-900/40 flex items-center justify-center text-xl flex-shrink-0">
                   🥦

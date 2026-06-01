@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { proxyImage } from '../utils/proxyImage'
 
 type Category = 'all' | 'breakfast' | 'lunch' | 'dinner' | 'snack'
 
@@ -93,7 +94,7 @@ export default function RecipesPage() {
           ) : selected && (
             <>
               <div className="relative">
-                <img src={selected.image_url} alt={selected.name} className="w-full h-56 object-cover" />
+                <img src={proxyImage(selected.image_url)} alt={selected.name} className="w-full h-56 object-cover" />
                 <button
                   onClick={() => setSelected(null)}
                   className="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-black/70 transition-colors text-sm"
@@ -172,9 +173,9 @@ export default function RecipesPage() {
               className="text-left rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 hover:border-teal-400 dark:hover:border-teal-600 transition-colors group"
             >
               <img
-                src={recipe.image_url}
+                src={proxyImage(recipe.image_url)}
                 alt={recipe.name}
-                className="w-full h-36 object-cover group-hover:opacity-90 transition-opacity"
+                className="w-full h-36 object-cover group-hover:opacity-90 transition-opacity bg-gray-100 dark:bg-gray-800"
               />
               <div className="p-3">
                 <p className="font-medium text-sm text-gray-800 dark:text-gray-100 line-clamp-2">{recipe.name}</p>
