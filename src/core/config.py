@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_MB: int = 5
     ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png"]
 
+    # Admin
+    ADMIN_EMAIL: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

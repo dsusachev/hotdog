@@ -42,7 +42,11 @@ class OpenFoodFactsClient:
                 ) as client:
                     response = await client.get(url, params=params)
                     response.raise_for_status()
-                    data = response.json()
+                    try:
+                        data = response.json()
+                    except Exception:
+                        logger.warning("Open Food Facts returned non-JSON response")
+                        return []
 
                     # Для поиска возвращаем список, для продукта — словарь
                     if isinstance(data, dict) and "products" in data:

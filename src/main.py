@@ -19,13 +19,38 @@ from src.api.authRouter import router as authRouter
 from src.api.feedbackRouter import router as feedbackRouter
 from src.api.historyRouter import router as historyRouter
 from src.api.recipesRouter import router as recipesRouter
+from src.api.categoriesRouter import router as categoriesRouter
+from src.api.modelRouter import router as modelRouter
+from src.api.sprintRouter import router as sprintRouter
 from src.db.database import engine
 from src.db.models.user import Base
 
+TAGS_METADATA = [
+    {"name": "auth",       "description": "Регистрация, вход, профиль пользователя"},
+    {"name": "classify",   "description": "Распознавание продукта по фотографии (ML)"},
+    {"name": "products",   "description": "Поиск продуктов через Open Food Facts"},
+    {"name": "prices",     "description": "Цены из Open Prices и ближайшие магазины/кафе"},
+    {"name": "geocode",    "description": "Обратное геокодирование координат в адрес"},
+    {"name": "history",    "description": "История запросов текущего пользователя"},
+    {"name": "feedback",   "description": "Отзывы пользователей"},
+    {"name": "recipes",    "description": "Рецепты из TheMealDB"},
+    {"name": "categories", "description": "CRUD-справочник категорий продуктов"},
+    {"name": "model",      "description": "Информация о ML-модели (версия, список классов)"},
+    {"name": "sprints",    "description": "Управление спринтами и Burndown Chart"},
+    {"name": "health",     "description": "Проверка работоспособности сервиса"},
+]
+
 app = FastAPI(
-    title=settings.PROJECT_NAME,
+    title="FoodScanner API",
     version=settings.VERSION,
-    description="API for food recognition service",
+    description=(
+        "REST API для сервиса распознавания продуктов питания.\n\n"
+        "**Аутентификация:** Bearer JWT-токен в заголовке `Authorization`.\n\n"
+        "**Базовый URL:** `/api`\n\n"
+        "Документация доступна на `/docs` (Swagger UI) и `/redoc` (ReDoc)."
+    ),
+    contact={"name": "Hotdog Team"},
+    openapi_tags=TAGS_METADATA,
 )
 
 app.add_exception_handler(HTTPException, httpExceptionHandler)
@@ -55,3 +80,6 @@ app.include_router(authRouter, prefix="/api")
 app.include_router(feedbackRouter, prefix="/api")
 app.include_router(historyRouter, prefix="/api")
 app.include_router(recipesRouter, prefix="/api")
+app.include_router(categoriesRouter, prefix="/api")
+app.include_router(modelRouter, prefix="/api")
+app.include_router(sprintRouter, prefix="/api")

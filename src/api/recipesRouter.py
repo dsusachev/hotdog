@@ -5,7 +5,7 @@ from typing import List
 from src.core.logger import logger
 from src.services.mealDbClient import mealDbClient, CATEGORY_MAP
 
-router = APIRouter()
+router = APIRouter(tags=["recipes"])
 
 
 class RecipeCard(BaseModel):
@@ -47,7 +47,7 @@ def _parse_ingredients(meal: dict) -> List[Ingredient]:
     return result
 
 
-@router.get("/recipes", response_model=List[RecipeCard])
+@router.get("/recipes", response_model=List[RecipeCard], summary="Список рецептов", description="Возвращает рецепты из TheMealDB. Фильтрация по категории: `all` | `breakfast` | `lunch` | `dinner` | `snack`.")
 async def getRecipes(
     category: str = Query("all", description="all | breakfast | lunch | dinner | snack"),
 ):
@@ -78,7 +78,7 @@ async def getRecipes(
     return cards
 
 
-@router.get("/recipes/{recipe_id}", response_model=RecipeDetail)
+@router.get("/recipes/{recipe_id}", response_model=RecipeDetail, summary="Детали рецепта", description="Возвращает полный рецепт: ингредиенты, инструкцию, ссылку на YouTube и фото.")
 async def getRecipe(recipe_id: str):
     logger.info(f"Fetching recipe detail: {recipe_id}")
     meal = await mealDbClient.getById(recipe_id)

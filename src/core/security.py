@@ -2,7 +2,7 @@ import asyncio
 from functools import partial
 import bcrypt
 from jose import JWTError, jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from src.core.config import settings
@@ -20,9 +20,9 @@ def createAccessToken(data: dict, expiresDelta: Optional[timedelta] = None) -> s
     """Создаёт JWT токен"""
     toEncode = data.copy()
     if expiresDelta:
-        expire = datetime.utcnow() + expiresDelta
+        expire = datetime.now(timezone.utc) + expiresDelta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     toEncode.update({"exp": expire})
     return jwt.encode(toEncode, settings.SECRET_KEY, algorithm="HS256")
 
