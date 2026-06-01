@@ -23,7 +23,7 @@ async def getCurrentUser(
     if not sub:
         raise HTTPException(status_code=401, detail="Невалидный токен")
 
-    result = await db.execute(select(User).where(User.email == userId))
+    result = await db.execute(select(User).where(User.email == sub))
     user = result.scalar_one_or_none()
 
     if not user:

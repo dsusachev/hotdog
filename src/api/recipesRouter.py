@@ -31,6 +31,12 @@ class RecipeDetail(BaseModel):
     youtube: str | None
 
 
+def _normalize_thumb(url: str) -> str:
+    if url and not any(url.endswith(ext) for ext in ('.jpg', '.jpeg', '.png', '.webp')):
+        return url + '/preview'
+    return url
+
+
 def _parse_ingredients(meal: dict) -> List[Ingredient]:
     result = []
     for i in range(1, 21):
@@ -64,7 +70,7 @@ async def getRecipes(
             id=m["idMeal"],
             name=m["strMeal"],
             category=category,
-            image_url=m["strMealThumb"],
+            image_url=_normalize_thumb(m["strMealThumb"]),
         )
         for m in meals
         if m.get("idMeal") and m.get("strMeal")

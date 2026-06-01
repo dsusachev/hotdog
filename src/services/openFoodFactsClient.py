@@ -5,6 +5,9 @@ from src.core.logger import logger
 MAX_RETRIES = 2
 
 
+SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl"
+
+
 class OpenFoodFactsClient:
     def __init__(self):
         self.baseUrl = settings.OPEN_FOOD_FACTS_URL
@@ -19,7 +22,7 @@ class OpenFoodFactsClient:
             "json": 1,
             "fields": "code,product_name,brands,categories,nutriments,image_url",
         }
-        return await self._getWithRetry("/search", params)
+        return await self._getWithRetry(SEARCH_URL, params, absolute=True)
 
     async def getProductById(self, productId: str) -> dict | None:
         result = await self._getWithRetry(f"/product/{productId}")
@@ -27,19 +30,17 @@ class OpenFoodFactsClient:
             return result.get("product")
         return None
 
-    async def _getWithRetry(self, path: str, params: dict = None) -> list | dict:
+    async def _getWithRetry(self, path: str, params: dict = None, absolute: bool = False) -> list | dict:
         lastError = None
+        url = path if absolute else f"{self.baseUrl}{path}"
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 async with httpx.AsyncClient(
-                    timeout=5.0,
+                    timeout=15.0,
                     headers=self.headers,
                 ) as client:
-                    response = await client.get(
-                        f"{self.baseUrl}{path}",
-                        params=params,
-                    )
+                    response = await client.get(url, params=params)
                     response.raise_for_status()
                     data = response.json()
 
