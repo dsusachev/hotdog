@@ -40,9 +40,11 @@ async def getHistory(
     entries = []
     for row in rows:
         ml = row.raw_ml_response or {}
+        is_unknown = ml.get("is_unknown", False)
+        label = "Не распознано" if is_unknown else (ml.get("category") or ml.get("query") or "Неизвестно")
         entries.append(HistoryEntry(
             id=str(row.id),
-            label=ml.get("category") or ml.get("query") or "Неизвестно",
+            label=label,
             query=row.query_text or "",
             entry_type=ml.get("type", "classify"),
             confidence=ml.get("confidence"),
