@@ -1,6 +1,6 @@
 """
 Запускает все сервисы разом:
-  - ML-заглушка  → http://localhost:8001
+  - ML-сервис    → http://localhost:8001  (реальная модель или заглушка)
   - Backend API  → http://localhost:8000
   - Frontend     → http://localhost:3000
 
@@ -18,15 +18,25 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 FRONT_DIR = ROOT / "src" / "front"
+ARTIFACT  = ROOT / "ml" / "artifacts" / "resnet50_v1_20260519.pt"
 
 RESET  = "\033[0m"
 COLORS = ["\033[36m", "\033[32m", "\033[35m"]  # cyan, green, magenta
 
+use_real_ml = ARTIFACT.exists()
+
+if use_real_ml:
+    ml_cmd = [sys.executable, "ml/serve.py"]
+    ml_label = "ml "
+else:
+    ml_cmd = [sys.executable, "-m", "uvicorn", "ml.stub:app",
+              "--host", "0.0.0.0", "--port", "8001"]
+    ml_label = "ml~"  # тильда = заглушка
+
 SERVICES = [
     {
-        "name": "ml ",
-        "cmd": [sys.executable, "-m", "uvicorn", "ml.stub:app",
-                "--host", "0.0.0.0", "--port", "8001"],
+        "name": ml_label,
+        "cmd": ml_cmd,
         "cwd": ROOT,
     },
     {
@@ -74,9 +84,10 @@ def main() -> None:
         )
         t.start()
 
-    print(f"\n  ML stub → http://localhost:8001")
-    print(f"  API     → http://localhost:8000")
-    print(f"  UI      → http://localhost:3000")
+    ml_mode = "реальная модель" if use_real_ml else "заглушка (положи артефакт в ml/artifacts/)"
+    print(f"\n  ML  ({ml_mode}) → http://localhost:8001")
+    print(f"  API → http://localhost:8000")
+    print(f"  UI  → http://localhost:3000")
     print(f"\n  Остановка: Ctrl+C\n")
 
     def shutdown(sig, frame):
