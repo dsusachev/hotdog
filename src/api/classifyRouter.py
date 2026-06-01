@@ -1,5 +1,6 @@
 import uuid
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, UploadFile, File, Form
+from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import settings
 from src.core.logger import logger
@@ -11,16 +12,25 @@ from src.services.mlServiceClient import mlServiceClient
 from src.api.schemas import ClassifyResponse, TopPrediction, ErrorResponse
 from src.core.dependencies import getCurrentUser
 
-router = APIRouter()
+router = APIRouter(tags=["classify"])
 
 
 @router.post(
     "/classify",
     response_model=ClassifyResponse,
     responses={400: {"model": ErrorResponse}},
+    summary="Распознать продукт на фото",
+    description=(
+        "Принимает изображение (JPEG/PNG, до 5 МБ) и возвращает результат классификации ML-моделью.\n\n"
+        "- `status: ok` — продукт распознан с уверенностью выше порога\n"
+        "- `status: unknown` — модель не уверена (confidence < threshold)\n\n"
+        "Опционально принимает координаты (`lat`, `lng`) — сохраняются вместе с историей."
+    ),
 )
 async def classifyImage(
     file: UploadFile = File(...),
+    lat: Optional[float] = Form(None),
+    lng: Optional[float] = Form(None),
     db: AsyncSession = Depends(getDb),
     currentUser: User = Depends(getCurrentUser),
 ):
@@ -32,16 +42,18 @@ async def classifyImage(
 
     result = await mlServiceClient.classify(imageBytes, file.filename)
 
+    location = {"lat": lat, "lng": lng} if lat is not None and lng is not None else {}
     history = SearchHistory(
         id=uuid.uuid4(),
         user_id=currentUser.id,
         query_text=file.filename,
-        raw_ml_response={**result, "type": "classify"},
+        raw_ml_response={**result, "type": "classify", **location},
     )
     db.add(history)
     await db.commit()
 
-    isUnknown = result.get("confidence", 0) < settings.CONFIDENCE_THRESHOLD
+    confidence = result.get("confidence") or 0
+    isUnknown = confidence < settings.CONFIDENCE_THRESHOLD
 
     topK = [
         TopPrediction(
@@ -52,22 +64,22 @@ async def classifyImage(
     ]
 
     if isUnknown:
-        logger.info(f"Image not recognized, confidence: {result.get('confidence')}")
+        logger.info(f"Image not recognized, confidence: {confidence}")
         return ClassifyResponse(
             status="unknown",
             is_unknown=True,
             category=None,
-            confidence=result.get("confidence"),
+            confidence=confidence,
             top_k=topK,
             mock=result.get("mock", False),
         )
 
-    logger.info(f"Classified as '{result.get('category')}' with confidence {result.get('confidence')}")
+    logger.info(f"Classified as '{result.get('category')}' with confidence {confidence}")
     return ClassifyResponse(
         status="ok",
         is_unknown=False,
         category=result.get("category"),
-        confidence=round(result.get("confidence", 0), 4),
+        confidence=round(confidence, 4),
         top_k=topK,
         mock=result.get("mock", False),
     )

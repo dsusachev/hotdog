@@ -3,7 +3,7 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "HotDog API"
+    PROJECT_NAME: str = "FoodScanner API"
     VERSION: str = "0.1.0"
 
     # Server
@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     # File upload
     MAX_FILE_SIZE_MB: int = 5
     ALLOWED_EXTENSIONS: List[str] = ["jpg", "jpeg", "png"]
+
+    # Admin
+    ADMIN_EMAIL: str = ""
 
     class Config:
         env_file = ".env"

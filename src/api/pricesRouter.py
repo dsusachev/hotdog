@@ -1,12 +1,35 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, HTTPException
 from pydantic import BaseModel
 from typing import List
 
 from src.core.logger import logger
 from src.services.yandexPlacesClient import yandexPlacesClient
 from src.services.openPricesClient import openPricesClient
+from src.services.geocodingClient import geocodingClient
 
-router = APIRouter()
+router = APIRouter(tags=["prices"])
+
+
+class GeocodeResponse(BaseModel):
+    lat: float
+    lng: float
+    display_name: str | None = None
+    city: str | None = None
+    country: str | None = None
+    street: str | None = None
+    house: str | None = None
+
+
+@router.get("/geocode", response_model=GeocodeResponse, tags=["geocode"], summary="Обратное геокодирование", description="Конвертирует координаты (широта/долгота) в человекочитаемый адрес через Nominatim (OpenStreetMap).")
+async def geocode(
+    lat: float = Query(..., ge=-90, le=90),
+    lng: float = Query(..., ge=-180, le=180),
+):
+    logger.info(f"Geocoding ({lat}, {lng})")
+    result = await geocodingClient.reverseGeocode(lat, lng)
+    if not result:
+        raise HTTPException(status_code=503, detail="Сервис геокодирования недоступен")
+    return GeocodeResponse(lat=lat, lng=lng, **result)
 
 
 class PriceItem(BaseModel):
@@ -14,7 +37,7 @@ class PriceItem(BaseModel):
     price: float
     currency: str = "EUR"
     address: str | None = None
-    source: str = "open_prices"
+    price_source: str = "unknown"  # open_prices | manual | unknown
 
 
 class PlaceItem(BaseModel):
@@ -48,16 +71,21 @@ def parsePrice(raw: dict) -> PriceItem | None:
     )
     address = location.get("address") or None
 
+    try:
+        price_float = float(price)
+    except (TypeError, ValueError):
+        return None
+
     return PriceItem(
         store_name=storeName,
-        price=float(price),
+        price=price_float,
         currency=raw.get("currency", "EUR"),
         address=address,
-        source="open_prices",
+        price_source="open_prices",
     )
 
 
-@router.get("/prices", response_model=PricesResponse)
+@router.get("/prices", response_model=PricesResponse, summary="Цены и ближайшие магазины", description="Возвращает цены из Open Prices и список ближайших магазинов/кафе/ресторанов (через Overpass API) по координатам пользователя.")
 async def getPrices(
     product: str = Query(..., min_length=1, max_length=100, description="Название продукта"),
     lat: float = Query(..., ge=-90, le=90, description="Широта"),

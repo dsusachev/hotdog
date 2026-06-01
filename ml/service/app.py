@@ -75,6 +75,17 @@ def health() -> dict:
     }
 
 
+@app.get("/classes")
+def classes() -> dict:
+    if predictor is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    return {
+        "model_version": predictor.model_version,
+        "count": len(predictor.class_names),
+        "classes": sorted(predictor.class_names),
+    }
+
+
 @app.post("/classify")
 async def classify(file: UploadFile = File(...)) -> dict:
     if predictor is None:

@@ -142,8 +142,8 @@ export default function ResultPage({ mockResult }: Props) {
         )}
       </div>
 
-      {/* Nearby places */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+      {/* Nearby places — показываем только если продукт распознан */}
+      {!result?.is_unknown && <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800 dark:text-gray-100">Поблизости</h3>
           <button
@@ -220,7 +220,7 @@ export default function ResultPage({ mockResult }: Props) {
             ))}
           </ul>
         )}
-      </div>
+      </div>}
     </div>
   )
 }

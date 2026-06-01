@@ -11,7 +11,7 @@ from src.db.models.user import User
 from src.core.logger import logger
 from src.core.dependencies import getCurrentUser
 
-router = APIRouter()
+router = APIRouter(tags=["history"])
 
 
 class HistoryEntry(BaseModel):
@@ -23,7 +23,7 @@ class HistoryEntry(BaseModel):
     created_at: str
 
 
-@router.get("/history", response_model=List[HistoryEntry])
+@router.get("/history", response_model=List[HistoryEntry], summary="История запросов пользователя", description="Возвращает последние 50 записей: классификации фото и поиск продуктов. Отсортировано от новых к старым.")
 async def getHistory(
     db: AsyncSession = Depends(getDb),
     currentUser: User = Depends(getCurrentUser),
@@ -53,7 +53,7 @@ async def getHistory(
     return entries
 
 
-@router.delete("/history/{historyId}", status_code=204)
+@router.delete("/history/{historyId}", status_code=204, summary="Удалить запись из истории", description="Удаляет конкретную запись. Пользователь может удалять только свои записи.")
 async def deleteHistoryEntry(
     historyId: str,
     db: AsyncSession = Depends(getDb),
