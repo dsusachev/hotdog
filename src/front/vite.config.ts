@@ -6,9 +6,10 @@ export default defineConfig({
   server: {
     port: 3000,
     // Proxy API calls to the backend so the browser stays same-origin (no CORS).
+    host: true,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8000',
         changeOrigin: true,
       },
     },
