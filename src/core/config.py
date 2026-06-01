@@ -3,7 +3,7 @@ from typing import List
 
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "HotDog API"
+    PROJECT_NAME: str = "FoodScanner API"
     VERSION: str = "0.1.0"
 
     # Server

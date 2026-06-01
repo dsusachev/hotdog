@@ -41,7 +41,7 @@ TAGS_METADATA = [
 ]
 
 app = FastAPI(
-    title="FoodScanner API",
+    title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description=(
         "REST API для сервиса распознавания продуктов питания.\n\n"
