@@ -1,11 +1,13 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from uuid import UUID
+
 
 class UserCreateRequest(BaseModel):
-    """Схема для регистрации нового пользователя"""
     email: EmailStr
     password: str
-    display_name: str
+    display_name: Optional[str] = None
+
 
 class UserResponse(BaseModel):
     """Схема ответа с данными пользователя"""
@@ -21,14 +23,14 @@ class UserResponse(BaseModel):
         return str(v)
 
     class Config:
-        from_attributes = True  # Для работы с SQLAlchemy моделями (ранее orm_mode)
+        from_attributes = True
+
 
 class UserLoginRequest(BaseModel):
-    """Схема для логина"""
     email: EmailStr
     password: str
 
+
 class TokenResponse(BaseModel):
-    """Схема ответа с токеном"""
     access_token: str
     token_type: str

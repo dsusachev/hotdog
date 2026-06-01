@@ -6,6 +6,7 @@ from src.db.database import getDb
 from src.db.models.user import User
 from src.schemas.user import UserCreateRequest, UserResponse, UserLoginRequest, TokenResponse
 from src.core.security import hashPasswordAsync, verifyPasswordAsync, createAccessToken
+from src.core.dependencies import getCurrentUser
 
 logger = logging.getLogger("hotdog")
 router = APIRouter()
@@ -60,3 +61,8 @@ async def login(data: UserLoginRequest, db: AsyncSession = Depends(getDb)):
     
     logger.info(f"User logged in successfully: {data.email}")
     return TokenResponse(access_token=token, token_type="bearer")
+
+
+@router.get("/auth/me", response_model=UserResponse)
+async def getMe(currentUser: User = Depends(getCurrentUser)):
+    return currentUser

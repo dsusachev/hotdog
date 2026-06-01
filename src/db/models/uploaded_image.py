@@ -3,7 +3,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
 
-from src.db.base import Base
+from src.db.database import Base
 
 
 class UploadedImage(Base):

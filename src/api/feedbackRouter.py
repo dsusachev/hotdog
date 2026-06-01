@@ -4,7 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.database import getDb
 from src.db.models.feedback import Feedback
+from src.db.models.user import User
 from src.core.logger import logger
+from src.core.dependencies import getCurrentUser
 
 router = APIRouter()
 
@@ -19,7 +21,11 @@ class FeedbackResponse(BaseModel):
 
 
 @router.post("/feedback", response_model=FeedbackResponse)
-async def submitFeedback(data: FeedbackRequest, db: AsyncSession = Depends(getDb)):
+async def submitFeedback(
+    data: FeedbackRequest,
+    db: AsyncSession = Depends(getDb),
+    currentUser: User = Depends(getCurrentUser),
+):
     feedback = Feedback(rating=data.rating, message=data.message)
     db.add(feedback)
     await db.commit()
