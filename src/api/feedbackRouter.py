@@ -26,8 +26,12 @@ async def submitFeedback(
     db: AsyncSession = Depends(getDb),
     currentUser: User = Depends(getCurrentUser),
 ):
-    feedback = Feedback(rating=data.rating, message=data.message)
+    feedback = Feedback(
+        user_id=currentUser.id,
+        rating=data.rating,
+        comment=data.message,
+    )
     db.add(feedback)
     await db.commit()
-    logger.info(f"Feedback saved: rating={data.rating}")
+    logger.info(f"Feedback saved: rating={data.rating}, user={currentUser.email}")
     return FeedbackResponse()
