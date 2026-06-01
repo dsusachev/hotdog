@@ -31,9 +31,11 @@ cd hotdog
 
 **3. Установить зависимости:**
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt          # backend
+pip install -r ml/requirements.txt       # ML-сервис (torch и т.д.) — для реальной модели
 cd src/front && npm install && cd ../..
 ```
+> Без `ml/requirements.txt` сайт тоже запустится, но ML будет работать в режиме **заглушки** (фиксированный ответ).
 
 **4. Создать файл `.env`:**
 ```bash
@@ -52,8 +54,18 @@ python start.py
 Откроется:
 - Фронтенд → http://localhost:3000
 - Backend API → http://localhost:8000
+- ML-сервис → http://localhost:8001
 
 Остановка — **Ctrl+C**
+
+> **Модель скачивается сама.** При первом запуске `start.py` подтянет артефакт
+> `resnet50_v1_20260519.pt` (~90 МБ) из [GitHub Release `models-v1`](https://github.com/dsusachev/hotdog/releases/tag/models-v1)
+> в `ml/artifacts/` — никакого Google Drive вручную. Можно скачать заранее:
+> ```bash
+> python ml/scripts/download_model.py            # resnet50 (по умолчанию)
+> python ml/scripts/download_model.py --model efficientnet   # лёгкая модель, 16 МБ
+> ```
+> Если torch/модель недоступны — ML работает в режиме заглушки, сайт остаётся рабочим.
 
 ---
 
