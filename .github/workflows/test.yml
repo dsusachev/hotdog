@@ -11,6 +11,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff fix (lint + format)
+        run: |
+          ruff check --fix --unsafe-fixes .
+          ruff format .
+
+      - name: Commit fixes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet && echo "No lint fixes needed" || (
+            git add -u
+            git commit -m "style: auto-fix Python linting via ruff [skip ci]"
+            git push
+          )
+
   test:
     runs-on: ubuntu-latest
     strategy:
