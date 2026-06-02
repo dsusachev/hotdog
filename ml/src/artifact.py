@@ -4,18 +4,16 @@ Bundles weights + preprocessing config + class names + metrics + version into
 a single .pt file that inference code (task #41+) and the FastAPI service
 (task #50) can load with one call.
 """
+
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 
 import torch
 import torch.nn as nn
-
 from torchvision import transforms
 
-from src.evaluate import load_class_names
 from src.model import Backbone, build_model
 from src.transforms import EVAL_RESIZE, IMAGENET_MEAN, IMAGENET_STD, INPUT_SIZE
 
@@ -71,8 +69,14 @@ def load_artifact(path: str | Path, map_location: str | torch.device = "cpu") ->
             f"Unsupported artifact schema_version={schema}, "
             f"this code understands {ARTIFACT_SCHEMA_VERSION}"
         )
-    required = {"model_state", "model_version", "backbone", "num_classes",
-                "preprocessing", "class_id_to_name"}
+    required = {
+        "model_state",
+        "model_version",
+        "backbone",
+        "num_classes",
+        "preprocessing",
+        "class_id_to_name",
+    }
     missing = required - set(artifact.keys())
     if missing:
         raise ValueError(f"Artifact at {path} is missing fields: {missing}")
@@ -106,9 +110,11 @@ def build_eval_transform_from_artifact(artifact: dict) -> transforms.Compose:
     way changing src.transforms in the future does not silently break inference.
     """
     pp = artifact["preprocessing"]
-    return transforms.Compose([
-        transforms.Resize(pp["resize"]),
-        transforms.CenterCrop(pp["crop"]),
-        transforms.ToTensor(),
-        transforms.Normalize(pp["mean"], pp["std"]),
-    ])
+    return transforms.Compose(
+        [
+            transforms.Resize(pp["resize"]),
+            transforms.CenterCrop(pp["crop"]),
+            transforms.ToTensor(),
+            transforms.Normalize(pp["mean"], pp["std"]),
+        ]
+    )

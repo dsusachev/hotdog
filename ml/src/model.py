@@ -60,9 +60,7 @@ def build_model(
     return _replace_head(model, name, num_classes)
 
 
-def set_backbone_trainable(
-    model: nn.Module, name: Backbone, trainable: bool
-) -> None:
+def set_backbone_trainable(model: nn.Module, name: Backbone, trainable: bool) -> None:
     """Freeze or unfreeze the backbone, keeping the new head trainable.
 
     Used for the two-stage transfer-learning strategy (task #38):

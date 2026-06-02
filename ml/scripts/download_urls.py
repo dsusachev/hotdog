@@ -20,6 +20,7 @@ CSV format (header required):
 Usage:
     python ml/scripts/download_urls.py --csv urls.csv
 """
+
 from __future__ import annotations
 
 import argparse
@@ -49,20 +50,30 @@ USER_AGENT = "Mozilla/5.0 (hotdog-ml-research)"
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
-    p.add_argument("--csv", type=Path, required=True,
-                   help="CSV with header class_name,url")
+    p.add_argument(
+        "--csv", type=Path, required=True, help="CSV with header class_name,url"
+    )
     p.add_argument("--out-root", type=Path, default=DEFAULT_OUT_ROOT)
-    p.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET_ROOT,
-                   help="Used to validate class_name against classes.csv")
+    p.add_argument(
+        "--dataset-root",
+        type=Path,
+        default=DEFAULT_DATASET_ROOT,
+        help="Used to validate class_name against classes.csv",
+    )
     p.add_argument("--timeout", type=int, default=15)
-    p.add_argument("--min-size-kb", type=int, default=10,
-                   help="Reject downloads smaller than this — usually error pages")
+    p.add_argument(
+        "--min-size-kb",
+        type=int,
+        default=10,
+        help="Reject downloads smaller than this — usually error pages",
+    )
     return p.parse_args()
 
 
 def _next_index(folder: Path) -> int:
-    existing = [int(p.stem) for p in folder.iterdir()
-                if p.is_file() and p.stem.isdigit()]
+    existing = [
+        int(p.stem) for p in folder.iterdir() if p.is_file() and p.stem.isdigit()
+    ]
     return (max(existing) + 1) if existing else 1
 
 
@@ -82,7 +93,6 @@ def main() -> None:
     valid_class_names = set(load_class_names(args.dataset_root))
     args.out_root.mkdir(parents=True, exist_ok=True)
 
-
     # utf-8-sig strips a BOM if the CSV was saved by Excel / a Windows editor.
     rows = list(csv.DictReader(args.csv.open(encoding="utf-8-sig")))
     if not rows or set(rows[0].keys()) != {"class_name", "url"}:
@@ -90,7 +100,6 @@ def main() -> None:
             f"CSV must have exactly two columns: class_name,url. "
             f"Got: {set(rows[0].keys()) if rows else 'empty file'}"
         )
-
 
     n_ok = 0
     n_skip = 0
@@ -107,15 +116,18 @@ def main() -> None:
 
         try:
             resp = requests.get(
-                url, timeout=args.timeout,
+                url,
+                timeout=args.timeout,
                 headers={"User-Agent": USER_AGENT},
                 stream=True,
             )
             resp.raise_for_status()
             data = resp.content
             if len(data) < args.min_size_kb * 1024:
-                print(f"[{i}/{len(rows)}] SKIP {cname}: too small "
-                      f"({len(data)} bytes) — likely an error page")
+                print(
+                    f"[{i}/{len(rows)}] SKIP {cname}: too small "
+                    f"({len(data)} bytes) — likely an error page"
+                )
                 n_skip += 1
                 continue
 
@@ -128,8 +140,10 @@ def main() -> None:
             with Image.open(out_path) as img:
                 img.verify()
 
-            print(f"[{i}/{len(rows)}] OK   {cname}: {out_path.name} "
-                  f"({len(data) // 1024} KB)")
+            print(
+                f"[{i}/{len(rows)}] OK   {cname}: {out_path.name} "
+                f"({len(data) // 1024} KB)"
+            )
             n_ok += 1
         except Exception as e:
             print(f"[{i}/{len(rows)}] FAIL {cname}: {e}")

@@ -1,15 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
+from src.core.dependencies import getCurrentUser
+from src.core.logger import logger
 from src.db.database import getDb
 from src.db.models.feedback import Feedback
 from src.db.models.user import User
-from src.core.config import settings
-from src.core.logger import logger
-from src.core.dependencies import getCurrentUser
 
 router = APIRouter(tags=["feedback"])
 
@@ -31,7 +30,12 @@ class FeedbackItem(BaseModel):
     created_at: str
 
 
-@router.post("/feedback", response_model=FeedbackResponse, summary="Отправить отзыв", description="Сохраняет оценку (1–5) и опциональный комментарий. Требует авторизации.")
+@router.post(
+    "/feedback",
+    response_model=FeedbackResponse,
+    summary="Отправить отзыв",
+    description="Сохраняет оценку (1–5) и опциональный комментарий. Требует авторизации.",
+)
 async def submitFeedback(
     data: FeedbackRequest,
     db: AsyncSession = Depends(getDb),
@@ -48,7 +52,12 @@ async def submitFeedback(
     return FeedbackResponse()
 
 
-@router.get("/feedback", response_model=List[FeedbackItem], summary="Список отзывов (admin)", description="Возвращает все отзывы, отсортированные от новых к старым. Доступно только администратору (`ADMIN_EMAIL`).")
+@router.get(
+    "/feedback",
+    response_model=list[FeedbackItem],
+    summary="Список отзывов (admin)",
+    description="Возвращает все отзывы, отсортированные от новых к старым. Доступно только администратору (`ADMIN_EMAIL`).",
+)
 async def getFeedback(
     db: AsyncSession = Depends(getDb),
     currentUser: User = Depends(getCurrentUser),
@@ -56,11 +65,11 @@ async def getFeedback(
     if not settings.ADMIN_EMAIL or currentUser.email != settings.ADMIN_EMAIL:
         raise HTTPException(status_code=403, detail="Доступ запрещён")
 
-    result = await db.execute(
-        select(Feedback).order_by(Feedback.created_at.desc())
-    )
+    result = await db.execute(select(Feedback).order_by(Feedback.created_at.desc()))
     rows = result.scalars().all()
-    logger.info(f"Feedback list requested by admin {currentUser.email}: {len(rows)} entries")
+    logger.info(
+        f"Feedback list requested by admin {currentUser.email}: {len(rows)} entries"
+    )
 
     return [
         FeedbackItem(

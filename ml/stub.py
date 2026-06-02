@@ -1,4 +1,5 @@
 """Stub ML service — returns a fixed mock response while the real model is unavailable."""
+
 from fastapi import FastAPI, File, UploadFile
 
 app = FastAPI(title="HotDog ML Stub", version="stub")

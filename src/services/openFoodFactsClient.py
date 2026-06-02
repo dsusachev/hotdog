@@ -1,4 +1,5 @@
 import httpx
+
 from src.core.config import settings
 from src.core.logger import logger
 
@@ -30,7 +31,9 @@ class OpenFoodFactsClient:
             return result.get("product")
         return None
 
-    async def _getWithRetry(self, path: str, params: dict = None, absolute: bool = False) -> list | dict:
+    async def _getWithRetry(
+        self, path: str, params: dict = None, absolute: bool = False
+    ) -> list | dict:
         lastError = None
         url = path if absolute else f"{self.baseUrl}{path}"
 
@@ -72,7 +75,9 @@ class OpenFoodFactsClient:
                     f"(attempt {attempt}/{MAX_RETRIES})"
                 )
 
-        logger.error(f"Open Food Facts failed after {MAX_RETRIES} attempts: {lastError}")
+        logger.error(
+            f"Open Food Facts failed after {MAX_RETRIES} attempts: {lastError}"
+        )
         return []
 
 

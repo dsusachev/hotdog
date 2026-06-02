@@ -5,16 +5,17 @@ Revises: 0003_create_uploaded_images
 Create Date: 2026-05-28 00:00:00.000000
 
 """
-from typing import Sequence, Union
+
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
 from alembic import op
+from sqlalchemy.dialects.postgresql import UUID
 
 revision: str = "0004_create_feedback"
-down_revision: Union[str, None] = "0003_create_uploaded_images"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = "0003_create_uploaded_images"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

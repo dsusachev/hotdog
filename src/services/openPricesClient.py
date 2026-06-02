@@ -1,4 +1,5 @@
 import httpx
+
 from src.core.logger import logger
 
 OPEN_PRICES_URL = "https://prices.openfoodfacts.org/api/v1"

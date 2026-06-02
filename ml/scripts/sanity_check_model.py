@@ -6,6 +6,7 @@ Verifies:
   - a (1, 3, 224, 224) tensor passes through forward
   - output is the *ImageNet* head (1000 logits) — head replacement is task #37
 """
+
 from __future__ import annotations
 
 import sys

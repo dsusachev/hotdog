@@ -1,15 +1,15 @@
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 
+from src.core.dependencies import getCurrentUser
+from src.core.logger import logger
 from src.db.database import getDb
 from src.db.models.search_history import SearchHistory
 from src.db.models.user import User
-from src.core.logger import logger
-from src.core.dependencies import getCurrentUser
 
 router = APIRouter(tags=["history"])
 
@@ -23,7 +23,12 @@ class HistoryEntry(BaseModel):
     created_at: str
 
 
-@router.get("/history", response_model=List[HistoryEntry], summary="История запросов пользователя", description="Возвращает последние 50 записей: классификации фото и поиск продуктов. Отсортировано от новых к старым.")
+@router.get(
+    "/history",
+    response_model=list[HistoryEntry],
+    summary="История запросов пользователя",
+    description="Возвращает последние 50 записей: классификации фото и поиск продуктов. Отсортировано от новых к старым.",
+)
 async def getHistory(
     db: AsyncSession = Depends(getDb),
     currentUser: User = Depends(getCurrentUser),
@@ -41,19 +46,30 @@ async def getHistory(
     for row in rows:
         ml = row.raw_ml_response or {}
         is_unknown = ml.get("is_unknown", False)
-        label = "Не распознано" if is_unknown else (ml.get("category") or ml.get("query") or "Неизвестно")
-        entries.append(HistoryEntry(
-            id=str(row.id),
-            label=label,
-            query=row.query_text or "",
-            entry_type=ml.get("type", "classify"),
-            confidence=ml.get("confidence"),
-            created_at=row.created_at.isoformat(),
-        ))
+        label = (
+            "Не распознано"
+            if is_unknown
+            else (ml.get("category") or ml.get("query") or "Неизвестно")
+        )
+        entries.append(
+            HistoryEntry(
+                id=str(row.id),
+                label=label,
+                query=row.query_text or "",
+                entry_type=ml.get("type", "classify"),
+                confidence=ml.get("confidence"),
+                created_at=row.created_at.isoformat(),
+            )
+        )
     return entries
 
 
-@router.delete("/history/{historyId}", status_code=204, summary="Удалить запись из истории", description="Удаляет конкретную запись. Пользователь может удалять только свои записи.")
+@router.delete(
+    "/history/{historyId}",
+    status_code=204,
+    summary="Удалить запись из истории",
+    description="Удаляет конкретную запись. Пользователь может удалять только свои записи.",
+)
 async def deleteHistoryEntry(
     historyId: str,
     db: AsyncSession = Depends(getDb),

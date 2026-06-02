@@ -5,12 +5,12 @@ Verifies:
   - label range is [0, 41] (42 coarse classes)
   - one batch can be loaded
 """
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-import torch
 from torchvision import transforms
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

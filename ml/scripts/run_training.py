@@ -4,6 +4,7 @@ Examples:
     python ml/scripts/run_training.py --backbone efficientnet_b0
     python ml/scripts/run_training.py --backbone resnet50 --run-name resnet50_baseline
 """
+
 from __future__ import annotations
 
 import argparse
@@ -28,16 +29,24 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--backbone", choices=["efficientnet_b0", "resnet50"], required=True)
     p.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET_ROOT)
     p.add_argument("--runs-root", type=Path, default=DEFAULT_RUNS_ROOT)
-    p.add_argument("--run-name", type=str, default=None,
-                   help="If omitted, uses <timestamp>_<backbone>")
+    p.add_argument(
+        "--run-name",
+        type=str,
+        default=None,
+        help="If omitted, uses <timestamp>_<backbone>",
+    )
     p.add_argument("--batch-size", type=int, default=32)
     p.add_argument("--num-workers", type=int, default=4)
     p.add_argument("--stage1-epochs", type=int, default=4)
     p.add_argument("--stage2-epochs", type=int, default=15)
 
-    p.add_argument("--stage2-unfreeze-blocks", type=int, default=2,
-                   help="How many top backbone blocks to unfreeze on stage 2. "
-                        "Use a large number (e.g. 99) to unfreeze the whole backbone.")
+    p.add_argument(
+        "--stage2-unfreeze-blocks",
+        type=int,
+        default=2,
+        help="How many top backbone blocks to unfreeze on stage 2. "
+        "Use a large number (e.g. 99) to unfreeze the whole backbone.",
+    )
     p.add_argument("--stage2-lr", type=float, default=1e-4)
 
     p.add_argument("--early-stop-patience", type=int, default=6)
@@ -76,7 +85,6 @@ def main() -> None:
 
     config.stages[1].unfreeze_top_n_blocks = args.stage2_unfreeze_blocks
     config.stages[1].lr = args.stage2_lr
-
 
     model = build_model(config.backbone, num_classes=config.num_classes)
     result = train_two_stage(

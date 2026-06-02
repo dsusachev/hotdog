@@ -9,6 +9,7 @@ Writes inside the run-dir:
     eval_<split>_confusion.png     — row-normalized confusion matrix
     eval_summary.json              — compact summary (top-1/top-3/macro_f1, val+test)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -20,6 +21,8 @@ import torch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "ml"))
+
+from torch.utils.data import DataLoader  # noqa: E402
 
 from src.dataset import GroceryStoreDataset  # noqa: E402
 from src.evaluate import (  # noqa: E402
@@ -33,17 +36,21 @@ from src.evaluate import (  # noqa: E402
 from src.model import build_model  # noqa: E402
 from src.train import pick_device  # noqa: E402
 from src.transforms import build_eval_transform  # noqa: E402
-from torch.utils.data import DataLoader  # noqa: E402
 
 DEFAULT_DATASET_ROOT = REPO_ROOT / "ml" / "dataset" / "GroceryStoreDataset" / "dataset"
 
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser()
-    p.add_argument("--run-dir", type=Path, required=True,
-                   help="Run directory created by run_training.py")
-    p.add_argument("--checkpoint", type=str, default="best.pt",
-                   choices=["best.pt", "last.pt"])
+    p.add_argument(
+        "--run-dir",
+        type=Path,
+        required=True,
+        help="Run directory created by run_training.py",
+    )
+    p.add_argument(
+        "--checkpoint", type=str, default="best.pt", choices=["best.pt", "last.pt"]
+    )
     p.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET_ROOT)
     p.add_argument("--batch-size", type=int, default=64)
     p.add_argument("--num-workers", type=int, default=2)
@@ -78,27 +85,38 @@ def main() -> None:
     class_names = load_class_names(args.dataset_root)
     eval_transform = build_eval_transform()
 
-    summary = {"run_dir": str(run_dir), "checkpoint": args.checkpoint, "backbone": backbone}
+    summary = {
+        "run_dir": str(run_dir),
+        "checkpoint": args.checkpoint,
+        "backbone": backbone,
+    }
     for split in args.splits.split(","):
         split = split.strip()
         print(f"\n=== Evaluating on {split} ===")
         ds = GroceryStoreDataset(args.dataset_root, split, transform=eval_transform)
         loader = DataLoader(
-            ds, batch_size=args.batch_size, shuffle=False,
-            num_workers=args.num_workers, pin_memory=(device.type == "cuda"),
+            ds,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=args.num_workers,
+            pin_memory=(device.type == "cuda"),
         )
         logits, labels = predict_all(model, loader, device)
         metrics = compute_metrics(logits, labels, class_names)
 
         save_metrics(metrics, run_dir / f"eval_{split}.json")
         save_per_class_csv(metrics, run_dir / f"eval_{split}_per_class.csv")
-        plot_confusion_matrix(metrics, class_names, run_dir / f"eval_{split}_confusion.png")
+        plot_confusion_matrix(
+            metrics, class_names, run_dir / f"eval_{split}_confusion.png"
+        )
 
-        print(f"top1={metrics['top1']:.4f}, top3={metrics['top3']:.4f}, "
-              f"macro_f1={metrics['macro_f1_all_classes']:.4f} "
-              f"(present_only={metrics['macro_f1_present_only']:.4f}), "
-              f"n={metrics['n_samples']}, "
-              f"classes_present={metrics['n_classes_present']}/{metrics['n_classes_total']}")
+        print(
+            f"top1={metrics['top1']:.4f}, top3={metrics['top3']:.4f}, "
+            f"macro_f1={metrics['macro_f1_all_classes']:.4f} "
+            f"(present_only={metrics['macro_f1_present_only']:.4f}), "
+            f"n={metrics['n_samples']}, "
+            f"classes_present={metrics['n_classes_present']}/{metrics['n_classes_total']}"
+        )
         if metrics["classes_missing_names"]:
             print(f"classes missing in {split}: {metrics['classes_missing_names']}")
 
@@ -115,7 +133,9 @@ def main() -> None:
     (run_dir / "eval_summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False)
     )
-    print(f"\nSaved: eval_*.json, eval_*_per_class.csv, eval_*_confusion.png in {run_dir}")
+    print(
+        f"\nSaved: eval_*.json, eval_*_per_class.csv, eval_*_confusion.png in {run_dir}"
+    )
 
 
 if __name__ == "__main__":

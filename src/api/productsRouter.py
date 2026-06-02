@@ -1,11 +1,11 @@
 import uuid
-from fastapi import APIRouter, Query, HTTPException, Depends
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.logger import logger
 from src.core.dependencies import getCurrentUserOptional
+from src.core.logger import logger
 from src.db.database import getDb
 from src.db.models.search_history import SearchHistory
 from src.db.models.user import User
@@ -36,7 +36,7 @@ class ProductSearchItem(BaseModel):
 class ProductSearchResponse(BaseModel):
     query: str
     total: int
-    products: List[ProductSearchItem]
+    products: list[ProductSearchItem]
 
 
 class ProductDetailResponse(BaseModel):
@@ -86,9 +86,16 @@ def parseProduct(raw: dict) -> ProductSearchItem | None:
     )
 
 
-@router.get("/products/search", response_model=ProductSearchResponse, summary="Поиск продуктов", description="Ищет продукты в базе Open Food Facts по названию. Возвращает название, бренд, категории, КБЖУ и ссылку на фото.")
+@router.get(
+    "/products/search",
+    response_model=ProductSearchResponse,
+    summary="Поиск продуктов",
+    description="Ищет продукты в базе Open Food Facts по названию. Возвращает название, бренд, категории, КБЖУ и ссылку на фото.",
+)
 async def searchProducts(
-    query: str = Query(..., min_length=1, max_length=100, description="Название продукта"),
+    query: str = Query(
+        ..., min_length=1, max_length=100, description="Название продукта"
+    ),
     db: AsyncSession = Depends(getDb),
     currentUser: User | None = Depends(getCurrentUserOptional),
 ):
@@ -99,9 +106,7 @@ async def searchProducts(
     rawProducts = await openFoodFactsClient.searchProducts(query)
 
     products = [
-        parsed
-        for raw in rawProducts
-        if (parsed := parseProduct(raw)) is not None
+        parsed for raw in rawProducts if (parsed := parseProduct(raw)) is not None
     ]
 
     if currentUser:
@@ -110,7 +115,11 @@ async def searchProducts(
                 id=uuid.uuid4(),
                 user_id=currentUser.id,
                 query_text=query,
-                raw_ml_response={"type": "search", "query": query, "results_count": len(products)},
+                raw_ml_response={
+                    "type": "search",
+                    "query": query,
+                    "results_count": len(products),
+                },
             )
             db.add(history)
             await db.commit()
@@ -126,7 +135,12 @@ async def searchProducts(
     )
 
 
-@router.get("/products/{productId}", response_model=ProductDetailResponse, summary="Детали продукта по штрих-коду", description="Возвращает полную информацию о продукте: состав, КБЖУ, ингредиенты.")
+@router.get(
+    "/products/{productId}",
+    response_model=ProductDetailResponse,
+    summary="Детали продукта по штрих-коду",
+    description="Возвращает полную информацию о продукте: состав, КБЖУ, ингредиенты.",
+)
 async def getProduct(productId: str):
     logger.info(f"Getting product by id: '{productId}'")
     raw = await openFoodFactsClient.getProductById(productId)

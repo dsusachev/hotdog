@@ -1,21 +1,21 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-from uuid import UUID
 from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class FeedbackCreateRequest(BaseModel):
-    search_history_id: Optional[UUID] = None
+    search_history_id: UUID | None = None
     rating: int = Field(..., ge=1, le=5)
-    comment: Optional[str] = None
+    comment: str | None = None
 
 
 class FeedbackResponse(BaseModel):
     id: int
-    user_id: Optional[UUID] = None
-    search_history_id: Optional[UUID] = None
+    user_id: UUID | None = None
+    search_history_id: UUID | None = None
     rating: int
-    comment: Optional[str] = None
+    comment: str | None = None
     created_at: datetime
 
     class Config:

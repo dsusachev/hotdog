@@ -1,16 +1,17 @@
 import uuid
-from fastapi import APIRouter, Depends, UploadFile, File, Form
-from typing import Optional
+
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.api.schemas import ClassifyResponse, ErrorResponse, TopPrediction
 from src.core.config import settings
+from src.core.dependencies import getCurrentUser
 from src.core.logger import logger
 from src.core.validation import validateImageFile
 from src.db.database import getDb
 from src.db.models.search_history import SearchHistory
 from src.db.models.user import User
 from src.services.mlServiceClient import mlServiceClient
-from src.api.schemas import ClassifyResponse, TopPrediction, ErrorResponse
-from src.core.dependencies import getCurrentUser
 
 router = APIRouter(tags=["classify"])
 
@@ -29,8 +30,8 @@ router = APIRouter(tags=["classify"])
 )
 async def classifyImage(
     file: UploadFile = File(...),
-    lat: Optional[float] = Form(None),
-    lng: Optional[float] = Form(None),
+    lat: float | None = Form(None),
+    lng: float | None = Form(None),
     db: AsyncSession = Depends(getDb),
     currentUser: User = Depends(getCurrentUser),
 ):
@@ -74,7 +75,9 @@ async def classifyImage(
             mock=result.get("mock", False),
         )
 
-    logger.info(f"Classified as '{result.get('category')}' with confidence {confidence}")
+    logger.info(
+        f"Classified as '{result.get('category')}' with confidence {confidence}"
+    )
     return ClassifyResponse(
         status="ok",
         is_unknown=False,

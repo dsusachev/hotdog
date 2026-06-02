@@ -1,6 +1,6 @@
-from fastapi import Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from src.core.logger import logger
 
@@ -24,14 +24,18 @@ async def httpExceptionHandler(request: Request, exc: HTTPException) -> JSONResp
     )
 
 
-async def validationExceptionHandler(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validationExceptionHandler(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     details = []
     for error in exc.errors():
         field = " -> ".join(str(loc) for loc in error["loc"] if loc != "body")
-        details.append({
-            "field": field,
-            "message": error["msg"],
-        })
+        details.append(
+            {
+                "field": field,
+                "message": error["msg"],
+            }
+        )
 
     logger.warning(f"Validation error at {request.url.path}: {details}")
     return JSONResponse(

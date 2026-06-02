@@ -11,6 +11,7 @@ That is the standard selective-prediction trade-off: among all thresholds
 that meet a target accuracy on "confident" inputs, pick the one that
 covers the most input.
 """
+
 from __future__ import annotations
 
 import numpy as np
@@ -31,7 +32,7 @@ def compute_threshold_curve(
     probs = _softmax(logits)
     max_probs = probs.max(axis=1)
     preds = probs.argmax(axis=1)
-    correct = (preds == labels)
+    correct = preds == labels
     n = len(labels)
 
     out: list[dict] = []
@@ -43,14 +44,16 @@ def compute_threshold_curve(
             sel_acc = float("nan")
         else:
             sel_acc = float(correct[covered].mean())
-        out.append({
-            "threshold": float(t),
-            "coverage": float(coverage),
-            "selective_accuracy": sel_acc,
-            "n_covered": n_covered,
-            "n_correct_in_covered": int(correct[covered].sum()),
-            "n_rejected": n - n_covered,
-        })
+        out.append(
+            {
+                "threshold": float(t),
+                "coverage": float(coverage),
+                "selective_accuracy": sel_acc,
+                "n_covered": n_covered,
+                "n_correct_in_covered": int(correct[covered].sum()),
+                "n_rejected": n - n_covered,
+            }
+        )
     return out
 
 
@@ -64,7 +67,8 @@ def recommend_threshold(
     selective_accuracy (best effort), and marks `target_met=False`.
     """
     eligible = [
-        r for r in curve
+        r
+        for r in curve
         if not np.isnan(r["selective_accuracy"])
         and r["selective_accuracy"] >= min_selective_accuracy
     ]

@@ -6,6 +6,7 @@ Verifies for both EfficientNet-B0 and ResNet50:
   - set_backbone_trainable(False) freezes backbone but leaves head trainable
   - set_backbone_trainable(True) unfreezes everything
 """
+
 from __future__ import annotations
 
 import sys

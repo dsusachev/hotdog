@@ -5,6 +5,7 @@ Verifies that:
   - model can be instantiated from it
   - re-loaded weights produce bit-identical logits to the source checkpoint
 """
+
 from __future__ import annotations
 
 import sys
@@ -35,9 +36,11 @@ def check_artifact(artifact_path: Path) -> None:
     print(f"model_version={artifact['model_version']}")
     print(f"backbone={artifact['backbone']}, num_classes={artifact['num_classes']}")
     print(f"trained_at={artifact['trained_at']}")
-    print(f"input_size={artifact['input_size']}, "
-          f"resize={artifact['preprocessing']['resize']}, "
-          f"crop={artifact['preprocessing']['crop']}")
+    print(
+        f"input_size={artifact['input_size']}, "
+        f"resize={artifact['preprocessing']['resize']}, "
+        f"crop={artifact['preprocessing']['crop']}"
+    )
     test_top1 = artifact["metrics"]["test"]["top1"]
     print(f"metrics.test.top1={test_top1:.4f}")
     print(f"threshold={artifact['threshold']}  (None until task #44)")
@@ -65,17 +68,22 @@ def check_artifact(artifact_path: Path) -> None:
     with torch.no_grad():
         y1 = model_from_art(images)
         y2 = model_direct(images)
-    assert torch.allclose(y1, y2), "artifact load gave different logits than direct load"
+    assert torch.allclose(y1, y2), (
+        "artifact load gave different logits than direct load"
+    )
 
-    print(f"[OK] artifact round-trip identical (max diff "
-          f"{(y1 - y2).abs().max().item():.2e})")
+    print(
+        f"[OK] artifact round-trip identical (max diff "
+        f"{(y1 - y2).abs().max().item():.2e})"
+    )
 
 
 def main() -> None:
     artifacts = sorted(Path(REPO_ROOT / "ml" / "artifacts").glob("*.pt"))
     if not artifacts:
-        raise SystemExit("No artifacts found in ml/artifacts/. "
-                         "Run package_artifact.py first.")
+        raise SystemExit(
+            "No artifacts found in ml/artifacts/. Run package_artifact.py first."
+        )
     for p in artifacts:
         check_artifact(p)
     print("\nArtifact sanity check: PASSED")

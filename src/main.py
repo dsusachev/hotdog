@@ -1,43 +1,44 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from src.api.authRouter import router as authRouter
+from src.api.categoriesRouter import router as categoriesRouter
+from src.api.classifyRouter import router as classifyRouter
+from src.api.feedbackRouter import router as feedbackRouter
+from src.api.healthRouter import router as healthRouter
+from src.api.historyRouter import router as historyRouter
+from src.api.modelRouter import router as modelRouter
+from src.api.pricesRouter import router as pricesRouter
+from src.api.productsRouter import router as productsRouter
+from src.api.recipesRouter import router as recipesRouter
+from src.api.router import router
+from src.api.sprintRouter import router as sprintRouter
 from src.core.config import settings
 from src.core.errorHandlers import (
     httpExceptionHandler,
-    validationExceptionHandler,
     unexpectedExceptionHandler,
+    validationExceptionHandler,
 )
 from src.core.loggingMiddleware import loggingMiddleware
-from src.api.router import router
-from src.api.healthRouter import router as healthRouter
-from src.api.classifyRouter import router as classifyRouter
-from src.api.productsRouter import router as productsRouter
-from src.api.pricesRouter import router as pricesRouter
-from src.api.authRouter import router as authRouter
-from src.api.feedbackRouter import router as feedbackRouter
-from src.api.historyRouter import router as historyRouter
-from src.api.recipesRouter import router as recipesRouter
-from src.api.categoriesRouter import router as categoriesRouter
-from src.api.modelRouter import router as modelRouter
-from src.api.sprintRouter import router as sprintRouter
 from src.db.database import engine
 from src.db.models.user import Base
 
 TAGS_METADATA = [
-    {"name": "auth",       "description": "Регистрация, вход, профиль пользователя"},
-    {"name": "classify",   "description": "Распознавание продукта по фотографии (ML)"},
-    {"name": "products",   "description": "Поиск продуктов через Open Food Facts"},
-    {"name": "prices",     "description": "Цены из Open Prices и ближайшие магазины/кафе"},
-    {"name": "geocode",    "description": "Обратное геокодирование координат в адрес"},
-    {"name": "history",    "description": "История запросов текущего пользователя"},
-    {"name": "feedback",   "description": "Отзывы пользователей"},
-    {"name": "recipes",    "description": "Рецепты из TheMealDB"},
+    {"name": "auth", "description": "Регистрация, вход, профиль пользователя"},
+    {"name": "classify", "description": "Распознавание продукта по фотографии (ML)"},
+    {"name": "products", "description": "Поиск продуктов через Open Food Facts"},
+    {"name": "prices", "description": "Цены из Open Prices и ближайшие магазины/кафе"},
+    {"name": "geocode", "description": "Обратное геокодирование координат в адрес"},
+    {"name": "history", "description": "История запросов текущего пользователя"},
+    {"name": "feedback", "description": "Отзывы пользователей"},
+    {"name": "recipes", "description": "Рецепты из TheMealDB"},
     {"name": "categories", "description": "CRUD-справочник категорий продуктов"},
-    {"name": "model",      "description": "Информация о ML-модели (версия, список классов)"},
-    {"name": "sprints",    "description": "Управление спринтами и Burndown Chart"},
-    {"name": "health",     "description": "Проверка работоспособности сервиса"},
+    {"name": "model", "description": "Информация о ML-модели (версия, список классов)"},
+    {"name": "sprints", "description": "Управление спринтами и Burndown Chart"},
+    {"name": "health", "description": "Проверка работоспособности сервиса"},
 ]
 
 app = FastAPI(
@@ -66,10 +67,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.on_event("startup")
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
 
 app.include_router(router, prefix="/api")
 app.include_router(healthRouter)

@@ -64,45 +64,58 @@ def compute_metrics(
     labels_arr = np.asarray(labels)
 
     classes_present = sorted(set(int(c) for c in np.unique(labels_arr)))
-    classes_missing = [
-        i for i in range(n_classes) if i not in set(classes_present)
-    ]
+    classes_missing = [i for i in range(n_classes) if i not in set(classes_present)]
 
     top1 = _topk_accuracy(logits, labels_arr, k=1)
     top3 = _topk_accuracy(logits, labels_arr, k=3)
 
     macro_f1 = f1_score(
-        labels_arr, preds, labels=list(range(n_classes)),
-        average="macro", zero_division=0,
+        labels_arr,
+        preds,
+        labels=list(range(n_classes)),
+        average="macro",
+        zero_division=0,
     )
     weighted_f1 = f1_score(
-        labels_arr, preds, labels=list(range(n_classes)),
-        average="weighted", zero_division=0,
+        labels_arr,
+        preds,
+        labels=list(range(n_classes)),
+        average="weighted",
+        zero_division=0,
     )
     # Honest macro_f1 across only classes actually present in this split:
     macro_f1_present = f1_score(
-        labels_arr, preds, labels=classes_present,
-        average="macro", zero_division=0,
+        labels_arr,
+        preds,
+        labels=classes_present,
+        average="macro",
+        zero_division=0,
     )
 
     precision, recall, f1, support = precision_recall_fscore_support(
-        labels_arr, preds, labels=list(range(n_classes)), zero_division=0,
+        labels_arr,
+        preds,
+        labels=list(range(n_classes)),
+        zero_division=0,
     )
     per_class = []
     for i in range(n_classes):
-        per_class.append({
-            "class_id": i,
-            "class_name": class_names[i],
-            "precision": float(precision[i]),
-            "recall": float(recall[i]),
-            "f1": float(f1[i]),
-            "support": int(support[i]),
-        })
+        per_class.append(
+            {
+                "class_id": i,
+                "class_name": class_names[i],
+                "precision": float(precision[i]),
+                "recall": float(recall[i]),
+                "f1": float(f1[i]),
+                "support": int(support[i]),
+            }
+        )
 
     cm = confusion_matrix(labels_arr, preds, labels=list(range(n_classes)))
 
     report = classification_report(
-        labels_arr, preds,
+        labels_arr,
+        preds,
         labels=list(range(n_classes)),
         target_names=class_names,
         zero_division=0,
@@ -133,7 +146,15 @@ def save_metrics(metrics: dict, out_path: Path) -> None:
 def save_per_class_csv(metrics: dict, out_path: Path) -> None:
     with out_path.open("w", newline="") as f:
         writer = csv.DictWriter(
-            f, fieldnames=["class_id", "class_name", "precision", "recall", "f1", "support"]
+            f,
+            fieldnames=[
+                "class_id",
+                "class_name",
+                "precision",
+                "recall",
+                "f1",
+                "support",
+            ],
         )
         writer.writeheader()
         for row in metrics["per_class"]:
@@ -158,7 +179,8 @@ def plot_confusion_matrix(
         xticklabels=class_names,
         yticklabels=class_names,
         cmap="Blues",
-        vmin=0, vmax=1 if normalize else None,
+        vmin=0,
+        vmax=1 if normalize else None,
         cbar_kws={"label": "row-normalized" if normalize else "count"},
         ax=ax,
     )

@@ -5,9 +5,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.main import app
-from src.db.database import getDb
 from src.core.config import settings
+from src.db.database import getDb
+from src.main import app
 
 
 @pytest.fixture
@@ -73,7 +73,9 @@ def test_health_endpoint_db_unavailable(client, mock_db_session):
 
 def test_cors_headers(client):
     """Для разрешённого origin возвращается заголовок Access-Control-Allow-Origin."""
-    allowed_origin = settings.ALLOWED_ORIGINS[0] if settings.ALLOWED_ORIGINS else "http://localhost"
+    allowed_origin = (
+        settings.ALLOWED_ORIGINS[0] if settings.ALLOWED_ORIGINS else "http://localhost"
+    )
     response = client.get("/api/ping", headers={"Origin": allowed_origin})
     assert response.status_code == 200
     assert response.headers.get("access-control-allow-origin") == allowed_origin

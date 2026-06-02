@@ -6,6 +6,7 @@ Verifies:
   - output shape is (3, 224, 224), float32
   - Normalize was applied: mean per channel close to dataset stats, NOT to [0,1]
 """
+
 from __future__ import annotations
 
 import sys
@@ -48,14 +49,8 @@ def main() -> None:
     assert not torch.equal(t1, t2), "train transform must be stochastic"
     print(f"[OK] train transform: shape={tuple(t1.shape)}, stochastic")
 
-    print(
-        f"eval per-channel mean: "
-        f"{[round(float(e1[c].mean()), 3) for c in range(3)]}"
-    )
-    print(
-        f"eval per-channel std:  "
-        f"{[round(float(e1[c].std()), 3) for c in range(3)]}"
-    )
+    print(f"eval per-channel mean: {[round(float(e1[c].mean()), 3) for c in range(3)]}")
+    print(f"eval per-channel std:  {[round(float(e1[c].std()), 3) for c in range(3)]}")
     assert e1.min() < 0, "Normalize not applied — tensor still in [0,1]"
 
     print("\nTransforms sanity check: PASSED")

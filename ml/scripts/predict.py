@@ -5,6 +5,7 @@ Usage:
         --artifact ml/artifacts/resnet50_v1_20260519.pt \
         --image path/to/photo.jpg
 """
+
 from __future__ import annotations
 
 import argparse

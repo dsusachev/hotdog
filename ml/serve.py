@@ -4,6 +4,7 @@
 
 Override the model with ML_ARTIFACT_PATH and the port with ML_SERVICE_PORT.
 """
+
 from __future__ import annotations
 
 import os
@@ -14,7 +15,6 @@ ML_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ML_ROOT))
 
 import uvicorn  # noqa: E402
-
 from scripts.download_model import ensure_artifact  # noqa: E402
 from service.app import app  # noqa: E402
 
