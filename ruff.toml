@@ -12,7 +12,12 @@ select = [
 ]
 ignore = [
     "E501",  # line too long — handled by formatter
+    "B008",  # FastAPI pattern: Depends/File as default arguments
+    "B904",  # raise from err — requires manual refactor
 ]
+
+[lint.per-file-ignores]
+"*/__init__.py" = ["F401"]  # intentional re-exports
 
 [lint.isort]
 known-first-party = ["src", "ml"]

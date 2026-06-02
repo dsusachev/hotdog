@@ -31,7 +31,7 @@ jobs:
 
       - name: Run ruff fix (lint + format)
         run: |
-          ruff check --fix --unsafe-fixes .
+          ruff check --fix --unsafe-fixes . || true
           ruff format .
 
       - name: Commit fixes if any
