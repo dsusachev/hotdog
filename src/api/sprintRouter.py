@@ -1,22 +1,23 @@
 import uuid
-from datetime import date, datetime, timezone, timedelta
+from datetime import date, datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
-from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.config import settings
+from src.core.dependencies import getCurrentUser
+from src.core.logger import logger
 from src.db.database import getDb
 from src.db.models.sprint import Sprint, SprintItem
 from src.db.models.user import User
-from src.core.config import settings
-from src.core.logger import logger
-from src.core.dependencies import getCurrentUser
 
 router = APIRouter(tags=["sprints"])
 
 
 # ─── Schemas ────────────────────────────────────────────────────────────────
+
 
 class SprintCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
@@ -61,10 +62,11 @@ class BurndownResponse(BaseModel):
     total_points: int
     start_date: str
     end_date: str
-    data: List[BurndownPoint]
+    data: list[BurndownPoint]
 
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
+
 
 def _requireAdmin(currentUser: User):
     if not settings.ADMIN_EMAIL or currentUser.email != settings.ADMIN_EMAIL:
@@ -108,7 +110,8 @@ async def _getSprint(sprint_id: str, db: AsyncSession) -> Sprint:
 
 # ─── Sprint CRUD ─────────────────────────────────────────────────────────────
 
-@router.get("/sprints", response_model=List[SprintResponse])
+
+@router.get("/sprints", response_model=list[SprintResponse])
 async def listSprints(db: AsyncSession = Depends(getDb)):
     result = await db.execute(select(Sprint).order_by(Sprint.start_date.desc()))
     return [_sprintResponse(s) for s in result.scalars().all()]
@@ -127,7 +130,9 @@ async def createSprint(
 ):
     _requireAdmin(currentUser)
     if data.end_date <= data.start_date:
-        raise HTTPException(status_code=400, detail="end_date должен быть позже start_date")
+        raise HTTPException(
+            status_code=400, detail="end_date должен быть позже start_date"
+        )
 
     sprint = Sprint(
         id=uuid.uuid4(),
@@ -158,7 +163,8 @@ async def deleteSprint(
 
 # ─── Sprint Items CRUD ───────────────────────────────────────────────────────
 
-@router.get("/sprints/{sprintId}/items", response_model=List[SprintItemResponse])
+
+@router.get("/sprints/{sprintId}/items", response_model=list[SprintItemResponse])
 async def listItems(sprintId: str, db: AsyncSession = Depends(getDb)):
     await _getSprint(sprintId, db)
     result = await db.execute(
@@ -169,7 +175,9 @@ async def listItems(sprintId: str, db: AsyncSession = Depends(getDb)):
     return [_itemResponse(i) for i in result.scalars().all()]
 
 
-@router.post("/sprints/{sprintId}/items", response_model=SprintItemResponse, status_code=201)
+@router.post(
+    "/sprints/{sprintId}/items", response_model=SprintItemResponse, status_code=201
+)
 async def addItem(
     sprintId: str,
     data: SprintItemCreate,
@@ -191,7 +199,9 @@ async def addItem(
     return _itemResponse(item)
 
 
-@router.patch("/sprints/{sprintId}/items/{itemId}/done", response_model=SprintItemResponse)
+@router.patch(
+    "/sprints/{sprintId}/items/{itemId}/done", response_model=SprintItemResponse
+)
 async def markItemDone(
     sprintId: str,
     itemId: str,
@@ -224,7 +234,13 @@ async def markItemDone(
 
 # ─── Burndown Chart ──────────────────────────────────────────────────────────
 
-@router.get("/sprints/{sprintId}/burndown", response_model=BurndownResponse, summary="Burndown Chart спринта", description="Возвращает данные для построения Burndown Chart: фактические оставшиеся очки (`remaining_points`) и идеальная линия (`ideal_remaining`) для каждого дня от начала спринта до сегодня.")
+
+@router.get(
+    "/sprints/{sprintId}/burndown",
+    response_model=BurndownResponse,
+    summary="Burndown Chart спринта",
+    description="Возвращает данные для построения Burndown Chart: фактические оставшиеся очки (`remaining_points`) и идеальная линия (`ideal_remaining`) для каждого дня от начала спринта до сегодня.",
+)
 async def getBurndown(sprintId: str, db: AsyncSession = Depends(getDb)):
     sprint = await _getSprint(sprintId, db)
 
@@ -246,7 +262,8 @@ async def getBurndown(sprintId: str, db: AsyncSession = Depends(getDb)):
     while current <= chart_end:
         # Очки выполненных задач на текущий день включительно
         burned = sum(
-            i.points for i in items
+            i.points
+            for i in items
             if i.is_done and i.done_at and i.done_at.date() <= current
         )
         remaining = max(total - burned, 0)
@@ -255,11 +272,13 @@ async def getBurndown(sprintId: str, db: AsyncSession = Depends(getDb)):
         elapsed = (current - start).days
         ideal = round(total * (1 - elapsed / num_days), 2)
 
-        data.append(BurndownPoint(
-            date=current.isoformat(),
-            remaining_points=remaining,
-            ideal_remaining=max(ideal, 0),
-        ))
+        data.append(
+            BurndownPoint(
+                date=current.isoformat(),
+                remaining_points=remaining,
+                ideal_remaining=max(ideal, 0),
+            )
+        )
         current += timedelta(days=1)
 
     return BurndownResponse(

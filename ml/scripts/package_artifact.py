@@ -8,6 +8,7 @@ Usage:
 Reads best.pt + config.json + eval_summary.json + classes.csv from the run,
 writes ml/artifacts/<backbone>_<tag>_<YYYYMMDD>.pt with full metadata.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -35,8 +36,12 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--version-tag", default="v1")
     p.add_argument("--dataset-root", type=Path, default=DEFAULT_DATASET_ROOT)
     p.add_argument("--artifacts-root", type=Path, default=DEFAULT_ARTIFACTS_ROOT)
-    p.add_argument("--out", type=Path, default=None,
-                   help="Explicit output path. Overrides version-tag/artifacts-root.")
+    p.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="Explicit output path. Overrides version-tag/artifacts-root.",
+    )
     return p.parse_args()
 
 

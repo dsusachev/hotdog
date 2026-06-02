@@ -1,4 +1,3 @@
-import time
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 # Импортируем роутер из файла с health-эндпоинтом
 from src.api.healthRouter import router
-from src.db.database import getDb
 from src.core.config import settings
+from src.db.database import getDb
 
 settings.VERSION = "1.0.0-test"
 

@@ -15,6 +15,7 @@ Programmatic:
     from scripts.download_model import ensure_artifact
     path = ensure_artifact()        # returns Path, downloads if missing
 """
+
 from __future__ import annotations
 
 import argparse
@@ -25,7 +26,7 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-ML_ROOT = Path(__file__).resolve().parents[1]          # .../ml
+ML_ROOT = Path(__file__).resolve().parents[1]  # .../ml
 ARTIFACTS_DIR = ML_ROOT / "artifacts"
 
 RELEASE_BASE = "https://github.com/dsusachev/hotdog/releases/download/models-v1"
@@ -129,11 +130,15 @@ def ensure_artifact(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Download ML model artifacts.")
     parser.add_argument(
-        "--model", choices=list(MODELS), default=DEFAULT_MODEL,
+        "--model",
+        choices=list(MODELS),
+        default=DEFAULT_MODEL,
         help=f"which model to fetch (default: {DEFAULT_MODEL})",
     )
     parser.add_argument("--all", action="store_true", help="fetch every model")
-    parser.add_argument("--force", action="store_true", help="re-download even if present")
+    parser.add_argument(
+        "--force", action="store_true", help="re-download even if present"
+    )
     args = parser.parse_args()
 
     targets = list(MODELS) if args.all else [args.model]

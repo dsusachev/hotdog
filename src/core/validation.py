@@ -1,5 +1,6 @@
 import io
-from fastapi import UploadFile, HTTPException
+
+from fastapi import HTTPException, UploadFile
 from PIL import Image, UnidentifiedImageError
 
 from src.core.config import settings
@@ -27,7 +28,7 @@ def validateImageFile(file: UploadFile, imageBytes: bytes) -> None:
     if extension not in settings.ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
-            detail=f"Поддерживаются только JPG и PNG",
+            detail="Поддерживаются только JPG и PNG",
         )
 
     # 3. Проверка на пустой файл

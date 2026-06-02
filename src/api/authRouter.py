@@ -1,12 +1,19 @@
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.dependencies import getCurrentUser
+from src.core.security import createAccessToken, hashPasswordAsync, verifyPasswordAsync
 from src.db.database import getDb
 from src.db.models.user import User
-from src.schemas.user import UserCreateRequest, UserResponse, UserLoginRequest, TokenResponse
-from src.core.security import hashPasswordAsync, verifyPasswordAsync, createAccessToken
-from src.core.dependencies import getCurrentUser
+from src.schemas.user import (
+    TokenResponse,
+    UserCreateRequest,
+    UserLoginRequest,
+    UserResponse,
+)
 
 logger = logging.getLogger("hotdog")
 router = APIRouter(tags=["auth"])
@@ -26,7 +33,12 @@ async def register(data: UserCreateRequest, db: AsyncSession = Depends(getDb)):
         logger.warning(f"Registration failed - email already exists: {data.email}")
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed = await hashPasswordAsync(data.password)
-    user = User(email=data.email, password_hash=hashed, display_name=data.display_name, is_active=True)
+    user = User(
+        email=data.email,
+        password_hash=hashed,
+        display_name=data.display_name,
+        is_active=True,
+    )
     db.add(user)
     await db.commit()
     await db.refresh(user)

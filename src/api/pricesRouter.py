@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import List
 
 from src.core.logger import logger
-from src.services.yandexPlacesClient import yandexPlacesClient
-from src.services.openPricesClient import openPricesClient
 from src.services.geocodingClient import geocodingClient
+from src.services.openPricesClient import openPricesClient
+from src.services.yandexPlacesClient import yandexPlacesClient
 
 router = APIRouter(tags=["prices"])
 
@@ -20,7 +19,13 @@ class GeocodeResponse(BaseModel):
     house: str | None = None
 
 
-@router.get("/geocode", response_model=GeocodeResponse, tags=["geocode"], summary="Обратное геокодирование", description="Конвертирует координаты (широта/долгота) в человекочитаемый адрес через Nominatim (OpenStreetMap).")
+@router.get(
+    "/geocode",
+    response_model=GeocodeResponse,
+    tags=["geocode"],
+    summary="Обратное геокодирование",
+    description="Конвертирует координаты (широта/долгота) в человекочитаемый адрес через Nominatim (OpenStreetMap).",
+)
 async def geocode(
     lat: float = Query(..., ge=-90, le=90),
     lng: float = Query(..., ge=-180, le=180),
@@ -53,8 +58,8 @@ class PricesResponse(BaseModel):
     product: str
     latitude: float
     longitude: float
-    prices: List[PriceItem]
-    places: List[PlaceItem]
+    prices: list[PriceItem]
+    places: list[PlaceItem]
     prices_available: bool  # True если нашли данные в Open Prices
 
 
@@ -65,9 +70,7 @@ def parsePrice(raw: dict) -> PriceItem | None:
 
     location = raw.get("location", {}) or {}
     storeName = (
-        location.get("name")
-        or location.get("osm_name")
-        or "Неизвестный магазин"
+        location.get("name") or location.get("osm_name") or "Неизвестный магазин"
     )
     address = location.get("address") or None
 
@@ -85,9 +88,16 @@ def parsePrice(raw: dict) -> PriceItem | None:
     )
 
 
-@router.get("/prices", response_model=PricesResponse, summary="Цены и ближайшие магазины", description="Возвращает цены из Open Prices и список ближайших магазинов/кафе/ресторанов (через Overpass API) по координатам пользователя.")
+@router.get(
+    "/prices",
+    response_model=PricesResponse,
+    summary="Цены и ближайшие магазины",
+    description="Возвращает цены из Open Prices и список ближайших магазинов/кафе/ресторанов (через Overpass API) по координатам пользователя.",
+)
 async def getPrices(
-    product: str = Query(..., min_length=1, max_length=100, description="Название продукта"),
+    product: str = Query(
+        ..., min_length=1, max_length=100, description="Название продукта"
+    ),
     lat: float = Query(..., ge=-90, le=90, description="Широта"),
     lng: float = Query(..., ge=-180, le=180, description="Долгота"),
 ):
@@ -95,17 +105,15 @@ async def getPrices(
 
     # Шаг 1 — пробуем Open Prices
     rawPrices = await openPricesClient.getPricesByProductName(product)
-    prices = [
-        parsed
-        for raw in rawPrices
-        if (parsed := parsePrice(raw)) is not None
-    ]
+    prices = [parsed for raw in rawPrices if (parsed := parsePrice(raw)) is not None]
     pricesAvailable = len(prices) > 0
 
     if pricesAvailable:
         logger.info(f"Found {len(prices)} prices in Open Prices for '{product}'")
     else:
-        logger.info(f"No prices in Open Prices for '{product}', falling back to Yandex Places")
+        logger.info(
+            f"No prices in Open Prices for '{product}', falling back to Yandex Places"
+        )
 
     # Шаг 2 — всегда ищем места поблизости через Yandex
     searchQuery = f"купить {product}"

@@ -9,6 +9,7 @@
 
 Остановка: Ctrl+C
 """
+
 import os
 import signal
 import subprocess
@@ -18,10 +19,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 FRONT_DIR = ROOT / "src" / "front"
-ARTIFACT  = ROOT / "ml" / "artifacts" / "resnet50_v1_20260519.pt"
+ARTIFACT = ROOT / "ml" / "artifacts" / "resnet50_v1_20260519.pt"
 
-RESET  = "\033[0m"
+RESET = "\033[0m"
 COLORS = ["\033[36m", "\033[32m", "\033[35m"]  # cyan, green, magenta
+
 
 # Run the real model only when we can actually load it: torch installed AND the
 # artifact present. The artifact is fetched on demand from the GitHub Release, so
@@ -29,12 +31,15 @@ COLORS = ["\033[36m", "\033[32m", "\033[35m"]  # cyan, green, magenta
 # network) gracefully falls back to the stub instead of crashing the service.
 def _torch_available() -> bool:
     import importlib.util
+
     return importlib.util.find_spec("torch") is not None
 
 
 use_real_ml = False
 if not _torch_available():
-    print("  [start] torch не установлен (pip install -r ml/requirements.txt) — заглушка")
+    print(
+        "  [start] torch не установлен (pip install -r ml/requirements.txt) — заглушка"
+    )
 else:
     if not ARTIFACT.exists():
         try:
@@ -50,8 +55,16 @@ if use_real_ml:
     ml_cmd = [sys.executable, "ml/serve.py"]
     ml_label = "ml "
 else:
-    ml_cmd = [sys.executable, "-m", "uvicorn", "ml.stub:app",
-              "--host", "0.0.0.0", "--port", "8001"]
+    ml_cmd = [
+        sys.executable,
+        "-m",
+        "uvicorn",
+        "ml.stub:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8001",
+    ]
     ml_label = "ml~"  # тильда = заглушка
 
 SERVICES = [
@@ -62,14 +75,24 @@ SERVICES = [
     },
     {
         "name": "api",
-        "cmd": [sys.executable, "-m", "uvicorn", "src.main:app",
-                "--host", "0.0.0.0", "--port", "8000", "--reload"],
+        "cmd": [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "src.main:app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8000",
+            "--reload",
+        ],
         "cwd": ROOT,
     },
     {
         "name": "ui ",
-        "cmd": ["npm", "run", "dev"] if sys.platform != "win32"
-               else ["npm.cmd", "run", "dev"],
+        "cmd": ["npm", "run", "dev"]
+        if sys.platform != "win32"
+        else ["npm.cmd", "run", "dev"],
         "cwd": FRONT_DIR,
     },
 ]
@@ -105,11 +128,15 @@ def main() -> None:
         )
         t.start()
 
-    ml_mode = "реальная модель" if use_real_ml else "заглушка (положи артефакт в ml/artifacts/)"
+    ml_mode = (
+        "реальная модель"
+        if use_real_ml
+        else "заглушка (положи артефакт в ml/artifacts/)"
+    )
     print(f"\n  ML  ({ml_mode}) → http://localhost:8001")
-    print(f"  API → http://localhost:8000")
-    print(f"  UI  → http://localhost:3000")
-    print(f"\n  Остановка: Ctrl+C\n")
+    print("  API → http://localhost:8000")
+    print("  UI  → http://localhost:3000")
+    print("\n  Остановка: Ctrl+C\n")
 
     def shutdown(sig, frame):
         print("\nОстанавливаю сервисы...")

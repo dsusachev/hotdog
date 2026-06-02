@@ -16,10 +16,12 @@ Subfolder names MUST match the Coarse Class Name column in classes.csv
 (case-sensitive). Unknown folders raise — silent label mismatches are worse
 than a crash.
 """
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, NamedTuple
+from typing import NamedTuple
 
 from PIL import Image
 from torch.utils.data import Dataset
@@ -69,8 +71,7 @@ class OwnMiniDataset(Dataset):
 
         if not self.samples and not allow_empty:
             raise ValueError(
-                f"No images found in {self.root}. "
-                f"Expected files in {VALID_EXTENSIONS}."
+                f"No images found in {self.root}. Expected files in {VALID_EXTENSIONS}."
             )
 
         self.transform = transform

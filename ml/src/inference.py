@@ -7,6 +7,7 @@ FastAPI service (task #50) can hold one long-lived Predictor.
 Top-k extraction and threshold logic are added in tasks #42 and #43; here
 we only return the top-1 prediction.
 """
+
 from __future__ import annotations
 
 import time
@@ -120,7 +121,7 @@ class Predictor:
 
         top_k_list = [
             self._label_dict(idx, float(p))
-            for idx, p in zip(top_indices, top_probs)
+            for idx, p in zip(top_indices, top_probs, strict=False)
         ]
         max_prob = top_probs[0]
         is_unknown = max_prob < eff_threshold

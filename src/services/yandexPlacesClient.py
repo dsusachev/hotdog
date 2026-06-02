@@ -1,4 +1,5 @@
 import httpx
+
 from src.core.logger import logger
 
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
@@ -61,11 +62,7 @@ class OverpassClient:
             or tags.get("operator")
             or "Unnamed place"
         )
-        category = (
-            tags.get("shop")
-            or tags.get("amenity")
-            or "place"
-        )
+        category = tags.get("shop") or tags.get("amenity") or "place"
 
         return {
             "name": name,

@@ -5,6 +5,7 @@ Verifies:
   - every file decodes as an image
   - prints per-class counts so the team sees coverage at a glance
 """
+
 from __future__ import annotations
 
 import sys
@@ -20,9 +21,16 @@ OWN_ROOT = REPO_ROOT / "ml" / "own_test_set"
 DATASET_ROOT = REPO_ROOT / "ml" / "dataset" / "GroceryStoreDataset" / "dataset"
 
 EXPECTED_CLASSES = {
-    "Apple", "Banana", "Orange", "Pear",
-    "Tomato", "Pepper", "Potato",
-    "Milk", "Juice", "Yoghurt",
+    "Apple",
+    "Banana",
+    "Orange",
+    "Pear",
+    "Tomato",
+    "Pepper",
+    "Potato",
+    "Milk",
+    "Juice",
+    "Yoghurt",
 }
 
 

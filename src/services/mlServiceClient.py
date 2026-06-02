@@ -1,4 +1,5 @@
 import httpx
+
 from src.core.config import settings
 from src.core.logger import logger
 
@@ -17,7 +18,9 @@ class MlServiceClient:
                 response.raise_for_status()
                 return response.json()
         except Exception as e:
-            logger.warning(f"ML Service unavailable, using mock: {type(e).__name__}: {e}")
+            logger.warning(
+                f"ML Service unavailable, using mock: {type(e).__name__}: {e}"
+            )
             return self._mockResponse()
 
     async def getClasses(self) -> dict | None:

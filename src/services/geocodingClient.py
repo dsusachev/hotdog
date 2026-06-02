@@ -1,4 +1,5 @@
 import httpx
+
 from src.core.logger import logger
 
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/reverse"
@@ -11,12 +12,15 @@ class GeocodingClient:
     async def reverseGeocode(self, lat: float, lng: float) -> dict | None:
         try:
             async with httpx.AsyncClient(timeout=8.0, headers=self.headers) as client:
-                r = await client.get(NOMINATIM_URL, params={
-                    "lat": lat,
-                    "lon": lng,
-                    "format": "json",
-                    "accept-language": "ru",
-                })
+                r = await client.get(
+                    NOMINATIM_URL,
+                    params={
+                        "lat": lat,
+                        "lon": lng,
+                        "format": "json",
+                        "accept-language": "ru",
+                    },
+                )
                 r.raise_for_status()
                 data = r.json()
 

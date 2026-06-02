@@ -3,9 +3,9 @@ from __future__ import annotations
 import csv
 import json
 import time
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Iterable
 
 import torch
 import torch.nn as nn
@@ -15,7 +15,6 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 
 from src.model import Backbone, set_backbone_trainable
-
 
 # ---------- Config -----------------------------------------------------------
 
@@ -78,9 +77,7 @@ def amp_enabled_for(device: torch.device) -> bool:
 # ---------- Freeze helpers ---------------------------------------------------
 
 
-def unfreeze_top_blocks(
-    model: nn.Module, name: Backbone, n_blocks: int
-) -> None:
+def unfreeze_top_blocks(model: nn.Module, name: Backbone, n_blocks: int) -> None:
     """Stage 2: keep backbone mostly frozen, unfreeze only top-N blocks + head."""
     if n_blocks <= 0:
         return
@@ -252,9 +249,15 @@ def train_two_stage(
     writer = csv.writer(metrics_file)
     writer.writerow(
         [
-            "stage", "epoch", "lr",
-            "train_loss", "train_top1", "train_top3",
-            "val_loss", "val_top1", "val_top3",
+            "stage",
+            "epoch",
+            "lr",
+            "train_loss",
+            "train_top1",
+            "train_top3",
+            "val_loss",
+            "val_top1",
+            "val_top3",
             "secs",
         ]
     )
@@ -272,9 +275,7 @@ def train_two_stage(
         # Apply freeze schedule for this stage.
         if stage.backbone_trainable:
             set_backbone_trainable(model, backbone_name, trainable=False)
-            unfreeze_top_blocks(
-                model, backbone_name, stage.unfreeze_top_n_blocks
-            )
+            unfreeze_top_blocks(model, backbone_name, stage.unfreeze_top_n_blocks)
         else:
             set_backbone_trainable(model, backbone_name, trainable=False)
 
@@ -300,26 +301,38 @@ def train_two_stage(
             # where BN layers are everywhere.
             set_bn_eval_for_frozen_backbone(model, backbone_name)
 
-
             train_m = train_one_epoch(
-                model, train_loader, criterion, optimizer, scaler,
-                device, config.max_grad_norm,
+                model,
+                train_loader,
+                criterion,
+                optimizer,
+                scaler,
+                device,
+                config.max_grad_norm,
             )
             val_m = evaluate(model, val_loader, criterion, device)
             current_lr = optimizer.param_groups[0]["lr"]
             scheduler.step()
 
             secs = time.time() - epoch_t0
-            writer.writerow([
-                stage.name, global_epoch, f"{current_lr:.2e}",
-                f"{train_m['loss']:.4f}", f"{train_m['top1']:.4f}", f"{train_m['top3']:.4f}",
-                f"{val_m['loss']:.4f}", f"{val_m['top1']:.4f}", f"{val_m['top3']:.4f}",
-                f"{secs:.1f}",
-            ])
+            writer.writerow(
+                [
+                    stage.name,
+                    global_epoch,
+                    f"{current_lr:.2e}",
+                    f"{train_m['loss']:.4f}",
+                    f"{train_m['top1']:.4f}",
+                    f"{train_m['top3']:.4f}",
+                    f"{val_m['loss']:.4f}",
+                    f"{val_m['top1']:.4f}",
+                    f"{val_m['top3']:.4f}",
+                    f"{secs:.1f}",
+                ]
+            )
             metrics_file.flush()
 
             print(
-                f"[{stage.name} {epoch+1}/{stage.epochs}] "
+                f"[{stage.name} {epoch + 1}/{stage.epochs}] "
                 f"train_loss={train_m['loss']:.4f} "
                 f"val_loss={val_m['loss']:.4f} "
                 f"val_top1={val_m['top1']:.4f} "
@@ -331,17 +344,25 @@ def train_two_stage(
             if val_m["loss"] < best_val_loss - 1e-6:
                 best_val_loss = val_m["loss"]
                 epochs_since_improve = 0
-                best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+                best_state = {
+                    k: v.detach().cpu().clone() for k, v in model.state_dict().items()
+                }
                 torch.save(
-                    {"model_state": best_state, "val_loss": best_val_loss,
-                     "global_epoch": global_epoch, "config": asdict(config)},
+                    {
+                        "model_state": best_state,
+                        "val_loss": best_val_loss,
+                        "global_epoch": global_epoch,
+                        "config": asdict(config),
+                    },
                     run_dir / "best.pt",
                 )
             else:
                 epochs_since_improve += 1
                 if epochs_since_improve >= config.early_stop_patience:
-                    print(f"Early stopping: no val_loss improvement for "
-                          f"{epochs_since_improve} epochs")
+                    print(
+                        f"Early stopping: no val_loss improvement for "
+                        f"{epochs_since_improve} epochs"
+                    )
                     stop_training = True
                     break
 
@@ -349,8 +370,11 @@ def train_two_stage(
 
     # Save the last state too — for inspection independent of "best".
     torch.save(
-        {"model_state": model.state_dict(), "global_epoch": global_epoch,
-         "config": asdict(config)},
+        {
+            "model_state": model.state_dict(),
+            "global_epoch": global_epoch,
+            "config": asdict(config),
+        },
         run_dir / "last.pt",
     )
 
