@@ -23,6 +23,7 @@ from src.core.errorHandlers import (
     unexpectedExceptionHandler,
     validationExceptionHandler,
 )
+from src.core.logger import logger
 from src.core.loggingMiddleware import loggingMiddleware
 from src.db.database import engine
 from src.db.models.user import Base
@@ -71,8 +72,15 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as exc:
+        logger.error(
+            "Не удалось подключиться к базе данных при старте. "
+            "Проверьте DB_HOST, DB_PORT, DB_USER, DB_PASSWORD в файле .env. "
+            f"Причина: {exc}"
+        )
 
 
 @app.get("/", include_in_schema=False)
