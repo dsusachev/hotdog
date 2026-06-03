@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from starlette.exceptions import HTTPException
