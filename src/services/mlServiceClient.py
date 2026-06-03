@@ -1,4 +1,5 @@
 import httpx
+
 from src.core.config import settings
 from src.core.logger import logger
 
@@ -17,8 +18,20 @@ class MlServiceClient:
                 response.raise_for_status()
                 return response.json()
         except Exception as e:
-            logger.warning(f"ML Service unavailable, using mock: {e}")
+            logger.warning(
+                f"ML Service unavailable, using mock: {type(e).__name__}: {e}"
+            )
             return self._mockResponse()
+
+    async def getClasses(self) -> dict | None:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                response = await client.get(f"{self.baseUrl}/classes")
+                response.raise_for_status()
+                return response.json()
+        except Exception as e:
+            logger.warning(f"ML Service getClasses failed: {e}")
+            return None
 
     def _mockResponse(self) -> dict:
         return {

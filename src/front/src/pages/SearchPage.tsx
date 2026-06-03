@@ -1,12 +1,22 @@
 import { useState } from 'react'
 import { SkeletonSearchResult } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
+import { proxyImage } from '../utils/proxyImage'
+
+type NutritionFacts = {
+  calories_per_100g: number | null
+  proteins_per_100g: number | null
+  fats_per_100g: number | null
+  carbs_per_100g: number | null
+}
 
 type SearchResult = {
   id: string
   name: string
-  description: string
-  calories: number
+  brand: string | null
+  categories: string | null
+  image_url: string | null
+  nutrition: NutritionFacts
 }
 
 type Status = 'idle' | 'loading' | 'done' | 'error'
@@ -26,9 +36,10 @@ export default function SearchPage() {
       const res = await fetch(`/api/products/search?query=${encodeURIComponent(query.trim())}`)
       if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`)
       const data = await res.json()
-      setResults(data)
+      const products: SearchResult[] = data.products ?? []
+      setResults(products)
       setStatus('done')
-      if (data.length === 0) toast.info('Ничего не найдено — попробуйте другой запрос')
+      if (products.length === 0) toast.info('Ничего не найдено — попробуйте другой запрос')
     } catch {
       setStatus('error')
       toast.error('Не удалось выполнить поиск. Попробуйте ещё раз.')
@@ -38,6 +49,9 @@ export default function SearchPage() {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') handleSearch()
   }
+
+  const description = (r: SearchResult) =>
+    [r.brand, r.categories?.split(',')[0]?.trim()].filter(Boolean).join(' · ') || '—'
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4">
@@ -83,16 +97,22 @@ export default function SearchPage() {
         <div className="space-y-3">
           {results.map(r => (
             <div key={r.id} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-teal-50 dark:bg-teal-900/40 flex items-center justify-center text-xl flex-shrink-0">
-                🥦
-              </div>
+              {r.image_url ? (
+                <img src={proxyImage(r.image_url)} alt={r.name} className="w-10 h-10 rounded-lg object-cover flex-shrink-0 bg-gray-100 dark:bg-gray-800" />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-teal-50 dark:bg-teal-900/40 flex items-center justify-center text-xl flex-shrink-0">
+                  🥦
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-gray-800 dark:text-gray-100 text-sm truncate">{r.name}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{r.description}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{description(r)}</p>
               </div>
-              <span className="text-xs font-medium text-teal-600 dark:text-teal-400 whitespace-nowrap bg-teal-50 dark:bg-teal-900/40 px-2 py-1 rounded-full flex-shrink-0">
-                {r.calories} ккал
-              </span>
+              {r.nutrition.calories_per_100g != null && (
+                <span className="text-xs font-medium text-teal-600 dark:text-teal-400 whitespace-nowrap bg-teal-50 dark:bg-teal-900/40 px-2 py-1 rounded-full flex-shrink-0">
+                  {Math.round(r.nutrition.calories_per_100g)} ккал
+                </span>
+              )}
             </div>
           ))}
         </div>

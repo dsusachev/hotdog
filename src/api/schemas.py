@@ -1,5 +1,4 @@
 from pydantic import BaseModel, EmailStr
-from typing import List
 
 
 class TopPrediction(BaseModel):
@@ -8,12 +7,12 @@ class TopPrediction(BaseModel):
 
 
 class ClassifyResponse(BaseModel):
-    status: str                        # "ok" | "unknown"
-    is_unknown: bool                   # True если объект не распознан
-    category: str | None               # Топ-1 категория
-    confidence: float | None           # Уверенность топ-1 (0.0 - 1.0)
-    top_k: List[TopPrediction]         # Топ-3 предсказания
-    mock: bool = False                 # True если ML Service недоступен
+    status: str  # "ok" | "unknown"
+    is_unknown: bool  # True если объект не распознан
+    category: str | None  # Топ-1 категория
+    confidence: float | None  # Уверенность топ-1 (0.0 - 1.0)
+    top_k: list[TopPrediction]  # Топ-3 предсказания
+    mock: bool = False  # True если ML Service недоступен
 
 
 class ErrorDetail(BaseModel):
@@ -25,7 +24,8 @@ class ErrorResponse(BaseModel):
     status: str = "error"
     code: int
     message: str
-    details: List[ErrorDetail] | None = None
+    details: list[ErrorDetail] | None = None
+
 
 class UserRegisterRequest(BaseModel):
     email: EmailStr

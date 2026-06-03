@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from typing import List
 
 from src.core.logger import logger
-from src.services.mealDbClient import mealDbClient, CATEGORY_MAP
+from src.services.mealDbClient import CATEGORY_MAP, mealDbClient
 
-router = APIRouter()
+router = APIRouter(tags=["recipes"])
 
 
 class RecipeCard(BaseModel):
@@ -27,11 +26,17 @@ class RecipeDetail(BaseModel):
     area: str | None
     image_url: str
     instructions: str
-    ingredients: List[Ingredient]
+    ingredients: list[Ingredient]
     youtube: str | None
 
 
-def _parse_ingredients(meal: dict) -> List[Ingredient]:
+def _normalize_thumb(url: str) -> str:
+    if url and not any(url.endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp")):
+        return url + "/preview"
+    return url
+
+
+def _parse_ingredients(meal: dict) -> list[Ingredient]:
     result = []
     for i in range(1, 21):
         name = (meal.get(f"strIngredient{i}") or "").strip()
@@ -41,9 +46,16 @@ def _parse_ingredients(meal: dict) -> List[Ingredient]:
     return result
 
 
-@router.get("/recipes", response_model=List[RecipeCard])
+@router.get(
+    "/recipes",
+    response_model=list[RecipeCard],
+    summary="Список рецептов",
+    description="Возвращает рецепты из TheMealDB. Фильтрация по категории: `all` | `breakfast` | `lunch` | `dinner` | `snack`.",
+)
 async def getRecipes(
-    category: str = Query("all", description="all | breakfast | lunch | dinner | snack"),
+    category: str = Query(
+        "all", description="all | breakfast | lunch | dinner | snack"
+    ),
 ):
     logger.info(f"Fetching recipes, category={category}")
 
@@ -64,7 +76,7 @@ async def getRecipes(
             id=m["idMeal"],
             name=m["strMeal"],
             category=category,
-            image_url=m["strMealThumb"],
+            image_url=_normalize_thumb(m["strMealThumb"]),
         )
         for m in meals
         if m.get("idMeal") and m.get("strMeal")
@@ -72,7 +84,12 @@ async def getRecipes(
     return cards
 
 
-@router.get("/recipes/{recipe_id}", response_model=RecipeDetail)
+@router.get(
+    "/recipes/{recipe_id}",
+    response_model=RecipeDetail,
+    summary="Детали рецепта",
+    description="Возвращает полный рецепт: ингредиенты, инструкцию, ссылку на YouTube и фото.",
+)
 async def getRecipe(recipe_id: str):
     logger.info(f"Fetching recipe detail: {recipe_id}")
     meal = await mealDbClient.getById(recipe_id)

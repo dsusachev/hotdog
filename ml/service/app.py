@@ -8,6 +8,7 @@ module also acts as the adapter between the two contracts.
 
 Run it via ml/serve.py (listens on :8001, the address in settings.ML_SERVICE_URL).
 """
+
 from __future__ import annotations
 
 import os
@@ -72,6 +73,17 @@ def health() -> dict:
         "model_loaded": predictor is not None,
         "model_version": getattr(predictor, "model_version", None),
         "artifact": str(ARTIFACT_PATH),
+    }
+
+
+@app.get("/classes")
+def classes() -> dict:
+    if predictor is None:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    return {
+        "model_version": predictor.model_version,
+        "count": len(predictor.class_names),
+        "classes": sorted(predictor.class_names),
     }
 
 

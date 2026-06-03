@@ -1,37 +1,26 @@
 services:
-  db:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: hotdog
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d hotdog"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   api:
     build: .
     ports:
       - "8000:8000"
+    env_file: .env
     environment:
-      DB_HOST: db
-      DB_USER: user
-      DB_PASSWORD: pass
-      DB_NAME: hotdog
-      DB_PORT: 5432
-      ALLOWED_ORIGINS: '["http://localhost:3000", "http://localhost:5173"]'
-      VERSION: "ci-test"
+      ML_SERVICE_URL: http://ml:8001
     depends_on:
-      db:
-        condition: service_healthy   # ждём только БД
+      - ml
 
-  locust:
-    image: locustio/locust:latest
-    volumes:
-      - ./:/mnt/locust
-    command: -f /mnt/locust/locustfile.py --host http://api:8000
+  front:
+    build: ./src/front
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_TARGET: http://api:8000
     depends_on:
-      api:
-        condition: service_started   # или вообще убрать depends_on
+      - api
+
+  ml:
+    build:
+      context: .
+      dockerfile: ml/Dockerfile.stub
+    ports:
+      - "8001:8001"

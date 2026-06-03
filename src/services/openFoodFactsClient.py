@@ -1,8 +1,12 @@
 import httpx
+
 from src.core.config import settings
 from src.core.logger import logger
 
 MAX_RETRIES = 2
+
+
+SEARCH_URL = "https://world.openfoodfacts.org/cgi/search.pl"
 
 
 class OpenFoodFactsClient:
@@ -19,7 +23,7 @@ class OpenFoodFactsClient:
             "json": 1,
             "fields": "code,product_name,brands,categories,nutriments,image_url",
         }
-        return await self._getWithRetry("/search", params)
+        return await self._getWithRetry(SEARCH_URL, params, absolute=True)
 
     async def getProductById(self, productId: str) -> dict | None:
         result = await self._getWithRetry(f"/product/{productId}")
@@ -27,21 +31,25 @@ class OpenFoodFactsClient:
             return result.get("product")
         return None
 
-    async def _getWithRetry(self, path: str, params: dict = None) -> list | dict:
+    async def _getWithRetry(
+        self, path: str, params: dict = None, absolute: bool = False
+    ) -> list | dict:
         lastError = None
+        url = path if absolute else f"{self.baseUrl}{path}"
 
         for attempt in range(1, MAX_RETRIES + 1):
             try:
                 async with httpx.AsyncClient(
-                    timeout=5.0,
+                    timeout=15.0,
                     headers=self.headers,
                 ) as client:
-                    response = await client.get(
-                        f"{self.baseUrl}{path}",
-                        params=params,
-                    )
+                    response = await client.get(url, params=params)
                     response.raise_for_status()
-                    data = response.json()
+                    try:
+                        data = response.json()
+                    except Exception:
+                        logger.warning("Open Food Facts returned non-JSON response")
+                        return []
 
                     # Для поиска возвращаем список, для продукта — словарь
                     if isinstance(data, dict) and "products" in data:
@@ -67,7 +75,9 @@ class OpenFoodFactsClient:
                     f"(attempt {attempt}/{MAX_RETRIES})"
                 )
 
-        logger.error(f"Open Food Facts failed after {MAX_RETRIES} attempts: {lastError}")
+        logger.error(
+            f"Open Food Facts failed after {MAX_RETRIES} attempts: {lastError}"
+        )
         return []
 
 

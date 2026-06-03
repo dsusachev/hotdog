@@ -1,13 +1,14 @@
 import httpx
+
 from src.core.logger import logger
 
 BASE_URL = "https://www.themealdb.com/api/json/v1/1"
 
 CATEGORY_MAP = {
     "breakfast": "Breakfast",
-    "lunch":     "Chicken",
-    "dinner":    "Seafood",
-    "snack":     "Dessert",
+    "lunch": "Chicken",
+    "dinner": "Seafood",
+    "snack": "Dessert",
 }
 
 
