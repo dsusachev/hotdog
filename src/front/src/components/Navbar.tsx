@@ -16,9 +16,21 @@ const THEME_OPTIONS: { value: 'light' | 'dark' | 'system'; icon: string; label: 
   { value: 'dark',   icon: '🌙', label: 'Тёмная'  },
 ]
 
+function getEmailFromToken(): string | null {
+  try {
+    const token = localStorage.getItem('token')
+    if (!token) return null
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.sub ?? payload.email ?? null
+  } catch {
+    return null
+  }
+}
+
 export default function Navbar() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
+  const email = getEmailFromToken()
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-200">
@@ -50,7 +62,6 @@ export default function Navbar() {
         </nav>
 
         <div className="flex gap-2 items-center">
-          {/* theme switcher: три кнопки */}
           <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
             {THEME_OPTIONS.map(({ value, icon, label }) => (
               <button
@@ -68,18 +79,32 @@ export default function Navbar() {
             ))}
           </div>
 
-          <button
-            onClick={() => navigate('/login')}
-            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-lg hover:border-teal-600 transition-colors"
-          >
-            Войти
-          </button>
-          <button
-            onClick={() => navigate('/register')}
-            className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-          >
-            Регистрация
-          </button>
+          {email ? (
+            <>
+              <span className="text-sm text-gray-600 dark:text-gray-300">{email}</span>
+              <button
+                onClick={() => { localStorage.removeItem('token'); navigate('/login') }}
+                className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-lg hover:border-red-400 hover:text-red-400 transition-colors"
+              >
+                Выйти
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => navigate('/login')}
+                className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-lg hover:border-teal-600 transition-colors"
+              >
+                Войти
+              </button>
+              <button
+                onClick={() => navigate('/register')}
+                className="px-3 py-1.5 text-sm bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              >
+                Регистрация
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>
