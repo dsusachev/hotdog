@@ -41,7 +41,22 @@ cd src/front && npm install && cd ../..
 ```bash
 cp env.example .env
 ```
-Открыть `.env` и вставить данные подключения к БД — спросить у DB-разработчика (Supabase credentials).
+
+Открыть `.env` и заполнить переменные:
+
+| Переменная | Что вписать | Где взять |
+|---|---|---|
+| `DB_HOST` | Хост Supabase-пула | Личный кабинет Supabase → Project Settings → Database → Host (Transaction pooler) |
+| `DB_PORT` | `6543` | Там же (Transaction pooler port) |
+| `DB_NAME` | `postgres` | Оставить как есть |
+| `DB_USER` | `postgres.<project-id>` | Там же — поле **User** |
+| `DB_PASSWORD` | Пароль проекта | Там же — поле **Password** (или спросить у DB-разработчика) |
+| `SECRET_KEY` | Любая длинная случайная строка | Сгенерировать: `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `YANDEX_API_KEY` | API-ключ Яндекс | [developer.tech.yandex.ru](https://developer.tech.yandex.ru) — нужны Geocoder API и Places API |
+| `ML_SERVICE_URL` | `http://localhost:8001` | Оставить как есть (менять только при Docker-запуске) |
+| `CONFIDENCE_THRESHOLD` | `0.5` | Оставить как есть (порог уверенности модели, 0–1) |
+
+Остальные переменные (`HOST`, `PORT`, `DEBUG`, `OPEN_FOOD_FACTS_URL`) можно не трогать — дефолтные значения подходят для локального запуска.
 
 ---
 
