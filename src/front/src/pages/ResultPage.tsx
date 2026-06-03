@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-const YANDEX_API_KEY = 'ВАШ_КЛЮЧ_ЗДЕСЬ'
-
 type Place = {
   name: string
   address: string
@@ -60,40 +58,31 @@ export default function ResultPage({ mockResult }: Props) {
   const loadPlaces = async (lat: number, lon: number) => {
     setPlacesStatus('loading')
     try {
-      const url = new URL('https://search-maps.yandex.ru/v1/')
-      url.searchParams.set('apikey', YANDEX_API_KEY)
-      url.searchParams.set('text', 'магазины продукты кафе рестораны')
-      url.searchParams.set('ll', `${lon},${lat}`)
-      url.searchParams.set('spn', '0.05,0.05')
-      url.searchParams.set('lang', 'ru_RU')
-      url.searchParams.set('results', '8')
-      url.searchParams.set('type', 'biz')
+      const product = result?.category ?? 'еда'
+      const url = new URL('/api/prices', window.location.origin)
+      url.searchParams.set('product', product)
+      url.searchParams.set('lat', String(lat))
+      url.searchParams.set('lng', String(lon))
 
       const res = await fetch(url.toString())
-      if (!res.ok) throw new Error(`Ошибка Яндекс API: ${res.status}`)
+      if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`)
 
       const data = await res.json()
-      const features = data.features ?? []
-
-      const rawDistances: number[] = features.map((f: any) => {
-        const coords: [number, number] = f.geometry.coordinates
-        return haversine(lat, lon, coords[1], coords[0])
-      })
-
-      const parsed: Place[] = features.map((f: any, i: number) => {
-        const props = f.properties
-        const dist = rawDistances[i]
+      const parsed: Place[] = (data.places ?? []).map((p: any) => {
+        const dist = (p.latitude != null && p.longitude != null)
+          ? haversine(lat, lon, p.latitude, p.longitude)
+          : null
         return {
-          name:     props.name ?? 'Без названия',
-          address:  props.description ?? '',
-          category: props.CompanyMetaData?.Categories?.[0]?.name ?? '',
-          distance: dist < 1000
-            ? `${Math.round(dist)} м`
-            : `${(dist / 1000).toFixed(1)} км`,
+          name:     p.name ?? 'Без названия',
+          address:  p.address ?? '',
+          category: p.category ?? '',
+          distance: dist == null
+            ? ''
+            : dist < 1000
+              ? `${Math.round(dist)} м`
+              : `${(dist / 1000).toFixed(1)} км`,
         }
       })
-
-      parsed.sort((a, b) => rawDistances[features.indexOf(a)] - rawDistances[features.indexOf(b)])
 
       setPlaces(parsed)
       setPlacesStatus('success')
@@ -153,8 +142,8 @@ export default function ResultPage({ mockResult }: Props) {
         )}
       </div>
 
-      {/* Nearby places */}
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
+      {/* Nearby places — показываем только если продукт распознан */}
+      {!result?.is_unknown && <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-gray-800 dark:text-gray-100">Поблизости</h3>
           <button
@@ -231,7 +220,7 @@ export default function ResultPage({ mockResult }: Props) {
             ))}
           </ul>
         )}
-      </div>
+      </div>}
     </div>
   )
 }

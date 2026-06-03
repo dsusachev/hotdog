@@ -5,11 +5,22 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    // Proxy API calls to the backend so the browser stays same-origin (no CORS).
+    host: true,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        target: process.env.VITE_API_TARGET ?? 'http://127.0.0.1:8000',
         changeOrigin: true,
+      },
+      // Proxy external images so the browser loads them same-origin
+      '/img-proxy/meals': {
+        target: 'https://www.themealdb.com',
+        changeOrigin: true,
+        rewrite: path => path.replace('/img-proxy/meals', '/images/media/meals'),
+      },
+      '/img-proxy/food': {
+        target: 'https://images.openfoodfacts.org',
+        changeOrigin: true,
+        rewrite: path => path.replace('/img-proxy/food', ''),
       },
     },
   },

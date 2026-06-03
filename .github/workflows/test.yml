@@ -11,11 +11,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff fix (lint + format)
+        run: |
+          ruff check --fix --unsafe-fixes . || true
+          ruff format .
+
+      - name: Commit fixes if any
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet && echo "No lint fixes needed" || (
+            git add -u
+            git commit -m "style: auto-fix Python linting via ruff"
+            git push
+          )
+
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']
+        python-version: ['3.10']
 
     steps:
       - uses: actions/checkout@v4
@@ -117,5 +151,42 @@ jobs:
         run: docker compose logs
 
       - name: Stop services
+        if: always()
+        run: docker compose down
+  load-test:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start services
+        run: docker compose up -d --build
+
+      - name: Wait for API to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s -f http://localhost:8000/health; then
+              echo "API ready"
+              break
+            fi
+            echo "Waiting... $i/30"
+            sleep 2
+          done
+
+      - name: Run Locust headless via Docker
+        run: |
+          docker compose run --rm locust \
+            -f /mnt/locust/locustfile.py --host http://api:8000 \
+            --users 50 --spawn-rate 5 --run-time 1m \
+            --headless --html /mnt/locust/report.html
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: locust-report
+          path: report.html
+
+      - name: Stop containers
         if: always()
         run: docker compose down

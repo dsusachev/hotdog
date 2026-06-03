@@ -1,7 +1,8 @@
 import time
+
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.config import settings
 from src.core.logger import logger
@@ -9,11 +10,13 @@ from src.db.database import getDb
 
 router = APIRouter()
 
-startTime = time.time()   # <-- если нужен uptime, добавьте
+startTime = time.time()  # <-- если нужен uptime, добавьте
+
 
 @router.get("/ping")
 def ping():
     return {"message": "pong"}
+
 
 @router.get("/health")
 async def healthCheck(db: AsyncSession = Depends(getDb)):

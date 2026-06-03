@@ -1,11 +1,17 @@
-from fastapi import APIRouter, Query, HTTPException
-from pydantic import BaseModel
-from typing import List
+import uuid
 
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.dependencies import getCurrentUserOptional
 from src.core.logger import logger
+from src.db.database import getDb
+from src.db.models.search_history import SearchHistory
+from src.db.models.user import User
 from src.services.openFoodFactsClient import openFoodFactsClient
 
-router = APIRouter()
+router = APIRouter(tags=["products"])
 
 
 class NutritionFacts(BaseModel):
@@ -30,7 +36,7 @@ class ProductSearchItem(BaseModel):
 class ProductSearchResponse(BaseModel):
     query: str
     total: int
-    products: List[ProductSearchItem]
+    products: list[ProductSearchItem]
 
 
 class ProductDetailResponse(BaseModel):
@@ -80,9 +86,18 @@ def parseProduct(raw: dict) -> ProductSearchItem | None:
     )
 
 
-@router.get("/products/search", response_model=ProductSearchResponse)
+@router.get(
+    "/products/search",
+    response_model=ProductSearchResponse,
+    summary="Поиск продуктов",
+    description="Ищет продукты в базе Open Food Facts по названию. Возвращает название, бренд, категории, КБЖУ и ссылку на фото.",
+)
 async def searchProducts(
-    query: str = Query(..., min_length=1, max_length=100, description="Название продукта"),
+    query: str = Query(
+        ..., min_length=1, max_length=100, description="Название продукта"
+    ),
+    db: AsyncSession = Depends(getDb),
+    currentUser: User | None = Depends(getCurrentUserOptional),
 ):
     if not query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
@@ -91,10 +106,26 @@ async def searchProducts(
     rawProducts = await openFoodFactsClient.searchProducts(query)
 
     products = [
-        parsed
-        for raw in rawProducts
-        if (parsed := parseProduct(raw)) is not None
+        parsed for raw in rawProducts if (parsed := parseProduct(raw)) is not None
     ]
+
+    if currentUser:
+        try:
+            history = SearchHistory(
+                id=uuid.uuid4(),
+                user_id=currentUser.id,
+                query_text=query,
+                raw_ml_response={
+                    "type": "search",
+                    "query": query,
+                    "results_count": len(products),
+                },
+            )
+            db.add(history)
+            await db.commit()
+        except Exception as e:
+            await db.rollback()
+            logger.warning(f"Failed to save search history: {e}")
 
     logger.info(f"Found {len(products)} products for query '{query}'")
     return ProductSearchResponse(
@@ -104,7 +135,12 @@ async def searchProducts(
     )
 
 
-@router.get("/products/{productId}", response_model=ProductDetailResponse)
+@router.get(
+    "/products/{productId}",
+    response_model=ProductDetailResponse,
+    summary="Детали продукта по штрих-коду",
+    description="Возвращает полную информацию о продукте: состав, КБЖУ, ингредиенты.",
+)
 async def getProduct(productId: str):
     logger.info(f"Getting product by id: '{productId}'")
     raw = await openFoodFactsClient.getProductById(productId)

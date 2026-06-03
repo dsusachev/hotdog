@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useToast } from '../components/Toast'
+import { authFetch } from '../utils/authFetch'
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
@@ -14,7 +15,12 @@ export default function FeedbackPage() {
     if (!rating) return
     setStatus('loading')
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const res = await authFetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, message }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
       setStatus('success')
       toast.success('Спасибо! Ваш отзыв отправлен.')
     } catch {
