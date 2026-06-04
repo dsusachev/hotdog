@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useTheme } from './ThemeContext'
+import { getEmailFromToken, removeToken } from '../api/auth'
 
 const LINKS = [
   { to: '/',         label: 'Главная' },
@@ -83,7 +84,7 @@ export default function Navbar() {
             <>
               <span className="text-sm text-gray-600 dark:text-gray-300">{email}</span>
               <button
-                onClick={() => { localStorage.removeItem('token'); navigate('/login') }}
+                onClick={() => { removeToken(); navigate('/login') }}
                 className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-lg hover:border-red-400 hover:text-red-400 transition-colors"
               >
                 Выйти

@@ -2,29 +2,15 @@ import { useState } from 'react'
 import { SkeletonSearchResult } from '../components/Skeleton'
 import { useToast } from '../components/Toast'
 import { proxyImage } from '../utils/proxyImage'
-
-type NutritionFacts = {
-  calories_per_100g: number | null
-  proteins_per_100g: number | null
-  fats_per_100g: number | null
-  carbs_per_100g: number | null
-}
-
-type SearchResult = {
-  id: string
-  name: string
-  brand: string | null
-  categories: string | null
-  image_url: string | null
-  nutrition: NutritionFacts
-}
+import { searchProducts } from '../api/products'
+import type { Product } from '../types/api'
 
 type Status = 'idle' | 'loading' | 'done' | 'error'
 
 export default function SearchPage() {
   const [query, setQuery]       = useState('')
   const [status, setStatus]     = useState<Status>('idle')
-  const [results, setResults]   = useState<SearchResult[]>([])
+  const [results, setResults]   = useState<Product[]>([])
   const { toast } = useToast()
 
   const handleSearch = async () => {
@@ -33,10 +19,7 @@ export default function SearchPage() {
     setResults([])
 
     try {
-      const res = await fetch(`/api/products/search?query=${encodeURIComponent(query.trim())}`)
-      if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`)
-      const data = await res.json()
-      const products: SearchResult[] = data.products ?? []
+      const products = await searchProducts(query)
       setResults(products)
       setStatus('done')
       if (products.length === 0) toast.info('Ничего не найдено — попробуйте другой запрос')
@@ -50,7 +33,7 @@ export default function SearchPage() {
     if (e.key === 'Enter') handleSearch()
   }
 
-  const description = (r: SearchResult) =>
+  const description = (r: Product) =>
     [r.brand, r.categories?.split(',')[0]?.trim()].filter(Boolean).join(' · ') || '—'
 
   return (

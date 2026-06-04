@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { register } from '../api/auth'
 
 type Status = 'idle' | 'loading' | 'error'
 
@@ -17,22 +18,10 @@ export default function RegisterPage() {
     setError('')
 
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: name, email, password }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setError(data.detail ?? 'Ошибка регистрации')
-        setStatus('error')
-        return
-      }
-
+      await register(email, password, name)
       navigate('/login')
-    } catch {
-      setError('Ошибка соединения с сервером')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка соединения с сервером')
       setStatus('error')
     }
   }
