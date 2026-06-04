@@ -11,6 +11,11 @@ type Place = {
 type GeoStatus = 'idle' | 'loading' | 'success' | 'error'
 type PlacesStatus = 'idle' | 'loading' | 'success' | 'error'
 
+type TopPrediction = {
+  category: string
+  confidence: number
+}
+
 type Props = {
   mockResult?: { label: string; confidence: number; calories: number } | null
 }
@@ -92,7 +97,7 @@ export default function ResultPage({ mockResult }: Props) {
     }
   }
 
-  const isMock = !state?.result && !!mockResult
+  const isMock = (!state?.result && !!mockResult) || result?.mock === true
 
   return (
     <div className="max-w-md mx-auto py-10 px-4">
@@ -105,7 +110,9 @@ export default function ResultPage({ mockResult }: Props) {
 
       {isMock && (
         <div className="mb-4 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-amber-700 dark:text-amber-400 text-sm">
-          🧪 Демо-режим — данные ненастоящие, геолокация работает
+          {result?.mock === true
+            ? '⚠️ ML-сервис недоступен — результат приблизительный'
+            : '🧪 Демо-режим — данные ненастоящие, геолокация работает'}
         </div>
       )}
 
@@ -131,6 +138,31 @@ export default function ResultPage({ mockResult }: Props) {
               <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400">
                 <span>Калории (на 100г)</span>
                 <span className="font-medium dark:text-gray-200">{result.calories} ккал</span>
+              </div>
+            )}
+            {Array.isArray(result.top_k) && result.top_k.length > 1 && (
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                <p className="text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-2">
+                  Топ предсказания
+                </p>
+                <ul className="space-y-1.5">
+                  {(result.top_k as TopPrediction[]).map((p, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-teal-500 rounded-full"
+                          style={{ width: `${Math.round(p.confidence * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right">
+                        {Math.round(p.confidence * 100)}%
+                      </span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300 w-28 truncate">
+                        {p.category}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </>
