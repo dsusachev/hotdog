@@ -5,8 +5,14 @@ services:
       - "8000:8000"
     environment:
       ML_SERVICE_URL: http://ml:8001
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: pass
+      DB_NAME: hotdog
+      DB_PORT: 5432
     depends_on:
       - ml
+      - db
 
   front:
     build: ./src/front
@@ -23,3 +29,23 @@ services:
       dockerfile: ml/Dockerfile.stub
     ports:
       - "8001:8001"
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: hotdog
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d hotdog"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  locust:
+    image: locustio/locust:latest
+    volumes:
+      - ./:/mnt/locust
+    command: -f /mnt/locust/locustfile.py --host http://api:8000
+    depends_on:
+      api:
+        condition: service_started
