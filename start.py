@@ -24,21 +24,39 @@ ARTIFACT = ROOT / "ml" / "artifacts" / "resnet50_v1_20260519.pt"
 RESET = "\033[0m"
 COLORS = ["\033[36m", "\033[32m", "\033[35m"]  # cyan, green, magenta
 
+# Prefer ml/.venv python (has torch) over the system python.
+ML_VENV_PYTHON = ROOT / "ml" / ".venv" / "bin" / "python"
 
-# Run the real model only when we can actually load it: torch installed AND the
-# artifact present. The artifact is fetched on demand from the GitHub Release, so
-# a fresh clone gets the real model automatically. Anything missing (no torch, no
-# network) gracefully falls back to the stub instead of crashing the service.
-def _torch_available() -> bool:
+
+def _pick_ml_python() -> tuple[str, bool]:
+    """Return (python_executable, torch_available).
+
+    Checks ml/.venv first so torch is found even when the system python
+    doesn't have it installed.
+    """
     import importlib.util
+    import subprocess as _sp
 
-    return importlib.util.find_spec("torch") is not None
+    if ML_VENV_PYTHON.exists():
+        result = _sp.run(
+            [str(ML_VENV_PYTHON), "-c", "import torch"],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return str(ML_VENV_PYTHON), True
 
+    if importlib.util.find_spec("torch") is not None:
+        return sys.executable, True
+
+    return sys.executable, False
+
+
+ml_python, torch_ok = _pick_ml_python()
 
 use_real_ml = False
-if not _torch_available():
+if not torch_ok:
     print(
-        "  [start] torch не установлен (pip install -r ml/requirements.txt) — заглушка"
+        "  [start] torch не найден ни в ml/.venv, ни в системном Python — заглушка"
     )
 else:
     if not ARTIFACT.exists():
@@ -52,7 +70,7 @@ else:
     use_real_ml = ARTIFACT.exists()
 
 if use_real_ml:
-    ml_cmd = [sys.executable, "ml/serve.py"]
+    ml_cmd = [ml_python, "ml/serve.py"]
     ml_label = "ml "
 else:
     ml_cmd = [
