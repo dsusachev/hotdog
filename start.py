@@ -55,9 +55,7 @@ ml_python, torch_ok = _pick_ml_python()
 
 use_real_ml = False
 if not torch_ok:
-    print(
-        "  [start] torch не найден ни в ml/.venv, ни в системном Python — заглушка"
-    )
+    print("  [start] torch не найден ни в ml/.venv, ни в системном Python — заглушка")
 else:
     if not ARTIFACT.exists():
         try:
