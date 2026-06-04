@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useTheme } from './ThemeContext'
+import { getEmailFromToken, removeToken } from '../api/auth'
 
 const LINKS = [
   { to: '/',         label: 'Главная' },
@@ -15,17 +16,6 @@ const THEME_OPTIONS: { value: 'light' | 'dark' | 'system'; icon: string; label: 
   { value: 'system', icon: '💻', label: 'Авто'    },
   { value: 'dark',   icon: '🌙', label: 'Тёмная'  },
 ]
-
-function getEmailFromToken(): string | null {
-  try {
-    const token = localStorage.getItem('token')
-    if (!token) return null
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.sub ?? payload.email ?? null
-  } catch {
-    return null
-  }
-}
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -83,7 +73,7 @@ export default function Navbar() {
             <>
               <span className="text-sm text-gray-600 dark:text-gray-300">{email}</span>
               <button
-                onClick={() => { localStorage.removeItem('token'); navigate('/login') }}
+                onClick={() => { removeToken(); navigate('/login') }}
                 className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-lg hover:border-red-400 hover:text-red-400 transition-colors"
               >
                 Выйти

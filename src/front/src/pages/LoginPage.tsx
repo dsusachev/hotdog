@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { login, saveToken } from '../api/auth'
 
 type Status = 'idle' | 'loading' | 'error'
 
@@ -16,24 +17,11 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        setError(data.detail ?? 'Неверный email или пароль')
-        setStatus('error')
-        return
-      }
-
-      const data = await res.json()
-      localStorage.setItem('token', data.access_token)
+      const data = await login(email, password)
+      saveToken(data.access_token)
       navigate('/')
-    } catch {
-      setError('Ошибка соединения с сервером')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ошибка соединения с сервером')
       setStatus('error')
     }
   }
