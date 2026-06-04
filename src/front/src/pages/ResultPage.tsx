@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { getPrices } from '../api/prices'
+import type { TopPrediction } from '../types/api'
 
 type Place = {
   name: string
@@ -64,18 +66,10 @@ export default function ResultPage({ mockResult }: Props) {
     setPlacesStatus('loading')
     try {
       const product = result?.category ?? 'еда'
-      const url = new URL('/api/prices', window.location.origin)
-      url.searchParams.set('product', product)
-      url.searchParams.set('lat', String(lat))
-      url.searchParams.set('lng', String(lon))
-
-      const res = await fetch(url.toString())
-      if (!res.ok) throw new Error(`Ошибка сервера: ${res.status}`)
-
-      const data = await res.json()
-      const parsed: Place[] = (data.places ?? []).map((p: any) => {
+      const data = await getPrices(product, lat, lon)
+      const parsed: Place[] = (data.places ?? []).map(p => {
         const dist = (p.latitude != null && p.longitude != null)
-          ? haversine(lat, lon, p.latitude, p.longitude)
+          ? haversine(lat, lon, p.latitude!, p.longitude!)
           : null
         return {
           name:     p.name ?? 'Без названия',

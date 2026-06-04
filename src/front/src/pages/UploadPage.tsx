@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../components/Toast'
-import { authFetch } from '../utils/authFetch'
+import { classifyImage } from '../api/classify'
 
 type Status = 'idle' | 'dragging' | 'loading' | 'error'
 
@@ -17,7 +17,6 @@ function AnalyzingOverlay({ imageSrc }: { imageSrc: string }) {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
-    // прогресс-бар
     const progressTimer = setInterval(() => {
       setProgress(p => {
         if (p >= 90) { clearInterval(progressTimer); return 90 }
@@ -25,7 +24,6 @@ function AnalyzingOverlay({ imageSrc }: { imageSrc: string }) {
       })
     }, 300)
 
-    // смена текста шагов
     const stepTimer = setInterval(() => {
       setStep(s => (s + 1) % LOADING_STEPS.length)
     }, 1200)
@@ -39,22 +37,18 @@ function AnalyzingOverlay({ imageSrc }: { imageSrc: string }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 mx-4 w-full max-w-sm shadow-2xl">
-        {/* image preview with scan effect */}
         <div className="relative rounded-xl overflow-hidden mb-6 h-48">
           <img
             src={imageSrc}
             alt="Анализ"
             className="w-full h-full object-cover"
           />
-          {/* scanning line */}
           <div
             className="absolute inset-x-0 h-0.5 bg-teal-400 shadow-[0_0_12px_3px_rgba(45,212,191,0.8)]"
             style={{ animation: 'scan 1.8s ease-in-out infinite' }}
           />
-          {/* dark overlay */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 to-black/40" />
 
-          {/* corner brackets */}
           {[
             'top-2 left-2 border-t-2 border-l-2 rounded-tl-lg',
             'top-2 right-2 border-t-2 border-r-2 rounded-tr-lg',
@@ -65,7 +59,6 @@ function AnalyzingOverlay({ imageSrc }: { imageSrc: string }) {
           ))}
         </div>
 
-        {/* step text */}
         <p
           key={step}
           className="text-center font-medium text-gray-800 dark:text-gray-100 mb-4 text-sm"
@@ -74,7 +67,6 @@ function AnalyzingOverlay({ imageSrc }: { imageSrc: string }) {
           {LOADING_STEPS[step]}
         </p>
 
-        {/* progress bar */}
         <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <div
             className="h-full bg-teal-500 rounded-full transition-all duration-300"
@@ -158,19 +150,8 @@ export default function UploadPage() {
     setStatus('loading')
     setErrorMsg('')
 
-    const formData = new FormData()
-    formData.append('file', file)
-
     try {
-      const res = await authFetch('/api/classify', {
-        method: 'POST',
-        body: formData,
-      })
-      if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || `Ошибка сервера: ${res.status}`)
-      }
-      const data = await res.json()
+      const data = await classifyImage(file)
       toast.success('Продукт успешно распознан!')
       navigate('/result', { state: { result: data } })
     } catch (err) {

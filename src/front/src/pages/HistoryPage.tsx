@@ -1,15 +1,7 @@
 import { useState, useEffect } from 'react'
 import { SkeletonHistoryItem } from '../components/Skeleton'
-import { authFetch } from '../utils/authFetch'
-
-type HistoryEntry = {
-  id: string
-  label: string
-  query: string
-  entry_type: string
-  confidence?: number
-  created_at: string
-}
+import { getHistory, deleteHistoryEntry } from '../api/history'
+import type { HistoryEntry } from '../types/api'
 
 export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true)
@@ -17,8 +9,7 @@ export default function HistoryPage() {
   const [deleting, setDeleting]   = useState<string | null>(null)
 
   useEffect(() => {
-    authFetch('/api/history')
-      .then(r => r.json())
+    getHistory()
       .then(data => { setHistory(data); setIsLoading(false) })
       .catch(() => setIsLoading(false))
   }, [])
@@ -26,7 +17,7 @@ export default function HistoryPage() {
   const handleDelete = async (id: string) => {
     setDeleting(id)
     try {
-      await authFetch(`/api/history/${id}`, { method: 'DELETE' })
+      await deleteHistoryEntry(id)
       setHistory(prev => prev.filter(e => e.id !== id))
     } finally {
       setDeleting(null)
