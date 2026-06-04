@@ -17,17 +17,6 @@ const THEME_OPTIONS: { value: 'light' | 'dark' | 'system'; icon: string; label: 
   { value: 'dark',   icon: '🌙', label: 'Тёмная'  },
 ]
 
-function getEmailFromToken(): string | null {
-  try {
-    const token = localStorage.getItem('token')
-    if (!token) return null
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.sub ?? payload.email ?? null
-  } catch {
-    return null
-  }
-}
-
 export default function Navbar() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
