@@ -159,8 +159,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start services
-        run: docker compose up -d --build
+      - name: Create ml stub and .env for CI
+        run: |
+          mkdir -p ml
+          cat > ml/stub.py << 'EOF'
+from fastapi import FastAPI
+app = FastAPI()
+@app.get("/")
+def root():
+    return {"status": "ml stub"}
+EOF
+          echo "ML_SERVICE_URL=http://ml:8001" > .env
+
+      - name: Start services (only api and db)
+        run: docker compose up -d --build api db
 
       - name: Wait for API to be ready
         run: |
