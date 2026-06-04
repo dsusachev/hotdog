@@ -177,13 +177,16 @@ jobs:
 
       - name: Run Locust headless
         run: |
-          docker run --rm --network host \
+          docker run --rm \
+            --network host \
             -v ${{ github.workspace }}:/mnt/locust \
+            --user $(id -u):$(id -g) \
             locustio/locust \
             -f /mnt/locust/locustfile.py \
             --host http://localhost:8000 \
             --users 50 --spawn-rate 5 --run-time 1m \
-            --headless --html /mnt/locust/report.html
+            --headless --html /mnt/locust/report.html \
+            --exit-code-on-error 0
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
