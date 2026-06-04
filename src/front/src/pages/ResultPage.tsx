@@ -13,6 +13,11 @@ type Place = {
 type GeoStatus = 'idle' | 'loading' | 'success' | 'error'
 type PlacesStatus = 'idle' | 'loading' | 'success' | 'error'
 
+type TopPrediction = {
+  category: string
+  confidence: number
+}
+
 type Props = {
   mockResult?: { label: string; confidence: number; calories: number } | null
 }
