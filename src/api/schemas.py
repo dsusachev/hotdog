@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 
 class TopPrediction(BaseModel):
@@ -25,33 +25,3 @@ class ErrorResponse(BaseModel):
     code: int
     message: str
     details: list[ErrorDetail] | None = None
-
-
-class UserRegisterRequest(BaseModel):
-    email: EmailStr
-    password: str
-    display_name: str | None = None
-
-
-class UserRegisterResponse(BaseModel):
-    id: str
-    email: str
-    display_name: str | None = None
-    message: str = "Регистрация прошла успешно"
-
-
-class UserLoginRequest(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
-class UserMeResponse(BaseModel):
-    id: str
-    email: str
-    display_name: str | None = None
-    is_active: bool
