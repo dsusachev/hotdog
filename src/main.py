@@ -16,7 +16,6 @@ from src.api.pricesRouter import router as pricesRouter
 from src.api.productsRouter import router as productsRouter
 from src.api.recipesRouter import router as recipesRouter
 from src.api.router import router
-from src.api.sprintRouter import router as sprintRouter
 from src.core.config import settings
 from src.core.errorHandlers import (
     httpExceptionHandler,
@@ -39,7 +38,6 @@ TAGS_METADATA = [
     {"name": "recipes", "description": "Рецепты из TheMealDB"},
     {"name": "categories", "description": "CRUD-справочник категорий продуктов"},
     {"name": "model", "description": "Информация о ML-модели (версия, список классов)"},
-    {"name": "sprints", "description": "Управление спринтами и Burndown Chart"},
     {"name": "health", "description": "Проверка работоспособности сервиса"},
 ]
 
@@ -99,4 +97,3 @@ app.include_router(historyRouter, prefix="/api")
 app.include_router(recipesRouter, prefix="/api")
 app.include_router(categoriesRouter, prefix="/api")
 app.include_router(modelRouter, prefix="/api")
-app.include_router(sprintRouter, prefix="/api")
